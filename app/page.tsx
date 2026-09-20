@@ -104,8 +104,8 @@ export default function DashboardPage() {
   const v = (n: number) => (hydrated ? formatNum(n) : "—");
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <div className="space-y-4 lg:flex lg:h-[calc(100dvh-4rem)] lg:flex-col lg:space-y-4">
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-[10px] font-medium tracking-widest text-muted-foreground">
             OVERVIEW
@@ -116,7 +116,7 @@ export default function DashboardPage() {
       </div>
 
       {/* ヒーローカード: 今月の増加コイン */}
-      <Card className="card-hover relative overflow-hidden border-primary/20">
+      <Card className="card-hover relative shrink-0 overflow-hidden border-primary/20">
         <div
           className="pointer-events-none absolute inset-0"
           style={{
@@ -154,7 +154,7 @@ export default function DashboardPage() {
       </Card>
 
       {/* ステータス */}
-      <div className="grid grid-cols-2 gap-2.5 md:grid-cols-3 2xl:grid-cols-6">
+      <div className="grid shrink-0 grid-cols-2 gap-2.5 md:grid-cols-3 2xl:grid-cols-6">
         <StatCard
           icon={Coins}
           iconCls="border-amber-400/20 bg-amber-400/10 text-amber-300"
@@ -195,13 +195,13 @@ export default function DashboardPage() {
         />
       </div>
 
-      <div className="grid items-stretch gap-3 lg:grid-cols-5">
+      <div className="grid items-stretch gap-3 lg:min-h-0 lg:flex-1 lg:grid-cols-5">
         {/* クイックアクション */}
-        <Card className="flex flex-col lg:col-span-2">
+        <Card className="flex min-h-0 flex-col lg:col-span-2">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">クイックアクション</CardTitle>
           </CardHeader>
-          <CardContent className="grid flex-1 grid-cols-2 content-start gap-2 lg:grid-cols-1">
+          <CardContent className="grid flex-1 grid-cols-2 content-center gap-2 lg:grid-cols-1">
             {QUICK_ACTIONS.map((a) => (
               <Link
                 key={a.href}
@@ -224,7 +224,7 @@ export default function DashboardPage() {
         </Card>
 
         {/* 最近のアクティビティ */}
-        <Card className="flex flex-col lg:col-span-3">
+        <Card className="flex min-h-0 flex-col lg:col-span-3">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="flex items-center gap-2 text-sm font-medium">
               <Activity className="size-4 text-muted-foreground" />
@@ -243,7 +243,7 @@ export default function DashboardPage() {
                 まだ実行履歴がありません
               </p>
             ) : (
-              <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+              <div className="max-h-[45vh] min-h-0 flex-1 overflow-y-auto pr-1 lg:max-h-none">
                 <ul className="space-y-1">
                   {account.activity.slice(0, 10).map((item) => (
                     <li
