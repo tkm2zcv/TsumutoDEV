@@ -77,12 +77,12 @@ function SetCard() {
       },
     });
   return (
-    <Card className="border-primary/40">
+    <Card className="flex flex-col border-primary/40">
       <CardHeader className="pb-3">
         <Head icon={Package} iconCls="border-primary/30 bg-primary/10 text-primary" title="セット代行" />
         <CardDescription className="text-xs">コイン2億枚 + レベルMAXを一括</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="flex flex-1 flex-col gap-3">
         <div className="grid grid-cols-2 gap-2">
           <div className="rounded-lg border bg-muted/30 p-3">
             <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -97,11 +97,13 @@ function SetCard() {
             <p className="mt-1 text-lg font-bold tabular-nums">Lv.{MAX_LEVEL}</p>
           </div>
         </div>
-        <TaskProgress running={task.running} progress={task.progress}
-          label={task.running ? ["コイン付与中", "レベル変更中", "確認中"][task.stepIndex] : undefined} />
-        <Button className="w-full" disabled={task.running || !hydrated} onClick={run}>
-          {task.running ? "実行中..." : "セット代行を実行する"}
-        </Button>
+        <div className="mt-auto space-y-3">
+          <TaskProgress running={task.running} progress={task.progress}
+            label={task.running ? ["コイン付与中", "レベル変更中", "確認中"][task.stepIndex] : undefined} />
+          <Button className="w-full" disabled={task.running || !hydrated} onClick={run}>
+            {task.running ? "実行中..." : "セット代行を実行する"}
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );
@@ -125,12 +127,12 @@ function CoinsCard() {
     });
   };
   return (
-    <Card>
+    <Card className="flex flex-col">
       <CardHeader className="pb-3">
         <Head icon={Coins} iconCls="border-amber-400/25 bg-amber-400/10 text-amber-300" title="コイン増加"
           right={hydrated ? `${formatNum(account.coins)} 枚` : "—"} />
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="flex flex-1 flex-col gap-3">
         <RadioGroup value={mode} onValueChange={setMode} className="flex flex-wrap gap-x-4 gap-y-2">
           <Radio value="100m" id="c1" label="1億枚" />
           <Radio value="200m" id="c2" label="2億枚" />
@@ -146,11 +148,13 @@ function CoinsCard() {
         <p className="text-xs text-muted-foreground tabular-nums">
           実行後: {hydrated ? `${formatNum(account.coins + amount)} 枚` : "—"}
         </p>
-        <TaskProgress running={task.running} progress={task.progress}
-          label={task.running ? ["確認中", "付与中", "反映中"][task.stepIndex] : undefined} />
-        <Button className="w-full" disabled={task.running || !hydrated || amount <= 0} onClick={run}>
-          {task.running ? "実行中..." : "コインを増加する"}
-        </Button>
+        <div className="mt-auto space-y-3">
+          <TaskProgress running={task.running} progress={task.progress}
+            label={task.running ? ["確認中", "付与中", "反映中"][task.stepIndex] : undefined} />
+          <Button className="w-full" disabled={task.running || !hydrated || amount <= 0} onClick={run}>
+            {task.running ? "実行中..." : "コインを増加する"}
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );
@@ -173,12 +177,12 @@ function LevelCard() {
     });
   };
   return (
-    <Card>
+    <Card className="flex flex-col">
       <CardHeader className="pb-3">
         <Head icon={TrendingUp} iconCls="border-emerald-400/25 bg-emerald-400/10 text-emerald-300" title="プレイヤーレベル"
           right={hydrated ? `Lv.${formatNum(account.level)}` : "—"} />
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="flex flex-1 flex-col gap-3">
         <RadioGroup value={mode} onValueChange={setMode} className="flex flex-wrap gap-x-4 gap-y-2">
           <Radio value="max" id="l1" label={`MAX (Lv.${MAX_LEVEL})`} />
           <Radio value="custom" id="l2" label="レベル指定" />
@@ -190,11 +194,13 @@ function LevelCard() {
         <p className="text-xs text-muted-foreground tabular-nums">
           実行後: Lv.{formatNum(target)}
         </p>
-        <TaskProgress running={task.running} progress={task.progress}
-          label={task.running ? ["確認中", "変更中"][task.stepIndex] : undefined} />
-        <Button className="w-full" disabled={task.running || !hydrated} onClick={run}>
-          {task.running ? "実行中..." : "レベルを変更する"}
-        </Button>
+        <div className="mt-auto space-y-3">
+          <TaskProgress running={task.running} progress={task.progress}
+            label={task.running ? ["確認中", "変更中"][task.stepIndex] : undefined} />
+          <Button className="w-full" disabled={task.running || !hydrated} onClick={run}>
+            {task.running ? "実行中..." : "レベルを変更する"}
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );
@@ -222,12 +228,12 @@ function ScoreCard() {
     });
   };
   return (
-    <Card>
+    <Card className="flex flex-col">
       <CardHeader className="pb-3">
         <Head icon={Trophy} iconCls="border-sky-400/25 bg-sky-400/10 text-sky-300" title="ハイスコア更新"
           right={hydrated ? formatNum(account.highScore) : "—"} />
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="flex flex-1 flex-col gap-3">
         <RadioGroup value={mode} onValueChange={setMode} className="grid gap-2">
           {SCORE_RANGES.map((r) => <Radio key={r.id} value={r.id} id={r.id} label={r.label} />)}
           <Radio value="custom" id="hs-custom" label="スコア指定" />
@@ -236,11 +242,13 @@ function ScoreCard() {
           <Input inputMode="numeric" placeholder={`最大 ${formatNum(MAX_SCORE)}`} value={custom}
             onChange={(e) => setCustom(e.target.value)} className="h-8" />
         )}
-        <TaskProgress running={task.running} progress={task.progress}
-          label={task.running ? ["確認中", "更新中"][task.stepIndex] : undefined} />
-        <Button className="w-full" disabled={task.running || !hydrated} onClick={run}>
-          {task.running ? "実行中..." : "ハイスコアを更新する"}
-        </Button>
+        <div className="mt-auto space-y-3">
+          <TaskProgress running={task.running} progress={task.progress}
+            label={task.running ? ["確認中", "更新中"][task.stepIndex] : undefined} />
+          <Button className="w-full" disabled={task.running || !hydrated} onClick={run}>
+            {task.running ? "実行中..." : "ハイスコアを更新する"}
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );
@@ -255,7 +263,7 @@ export default function BoostPage() {
         title="強化"
         description="セット代行・コイン・レベル・ハイスコアを1画面で実行します"
       />
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <SetCard />
         <CoinsCard />
         <LevelCard />

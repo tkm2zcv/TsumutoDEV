@@ -166,7 +166,7 @@ export default function DashboardPage() {
       </Card>
 
       {/* ステータス */}
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 2xl:grid-cols-6">
         <StatCard
           icon={Coins}
           iconCls="border-amber-400/20 bg-amber-400/10 text-amber-300"

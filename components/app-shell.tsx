@@ -180,7 +180,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </header>
       <main className="md:pl-64">
-        <div className="mx-auto max-w-6xl px-4 py-6 md:px-8 md:py-8">
+        <div className="px-4 py-6 md:px-10 md:py-8">
           {children}
         </div>
       </main>
