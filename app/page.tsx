@@ -22,7 +22,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { StatCard } from "@/components/stat-card";
 import { AccountSwitcher } from "@/components/account-switcher";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { usePlayer } from "@/lib/player-store";
 import { formatJa, formatNum, monthLabel } from "@/lib/format";
 
@@ -244,7 +243,7 @@ export default function DashboardPage() {
                 まだ実行履歴がありません
               </p>
             ) : (
-              <ScrollArea className="max-h-[196px]">
+              <div className="max-h-[196px] overflow-y-auto pr-1">
                 <ul className="space-y-1">
                   {account.activity.slice(0, 10).map((item) => (
                     <li
@@ -261,7 +260,7 @@ export default function DashboardPage() {
                     </li>
                   ))}
                 </ul>
-              </ScrollArea>
+              </div>
             )}
           </CardContent>
         </Card>

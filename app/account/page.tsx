@@ -30,7 +30,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { usePlayer } from "@/lib/player-store";
 import { formatNum } from "@/lib/format";
 
@@ -194,7 +193,7 @@ export default function AccountPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <ScrollArea className="max-h-[52vh] pr-2">
+            <div className="max-h-[52vh] overflow-y-auto pr-2">
             <ul className="divide-y">
               {accounts.map((a) => (
                 <li
@@ -242,7 +241,7 @@ export default function AccountPage() {
                 </li>
               ))}
             </ul>
-            </ScrollArea>
+            </div>
           </CardContent>
         </Card>
       </div>
