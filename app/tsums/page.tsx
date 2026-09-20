@@ -375,7 +375,7 @@ export default function TsumsPage() {
       </Card>
 
       <Dialog open={listDialogOpen} onOpenChange={setListDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Send className="size-5 text-primary" />
@@ -385,12 +385,24 @@ export default function TsumsPage() {
               所持ツム一覧({TSUMS.length}件)をお客様に送り、レベルを上げたいツムを選んでもらいます。返ってきたリストを「リストインポート」で読み込んでください
             </DialogDescription>
           </DialogHeader>
-          <Textarea
-            readOnly
-            rows={10}
-            className="font-mono text-xs"
-            value={listText}
-          />
+          <div className="max-h-[50vh] overflow-y-auto rounded-lg border bg-muted/20 p-2">
+            <div className="grid grid-cols-2 gap-1 sm:grid-cols-3 md:grid-cols-4">
+              {TSUMS.map((t) => (
+                <div
+                  key={t.id}
+                  className="flex items-center gap-2 rounded-md border border-transparent px-2 py-1.5 text-xs hover:bg-accent/50"
+                >
+                  <TsumAvatar tsum={t} className="size-6 text-xs" />
+                  <span className="truncate">{t.name}</span>
+                  {maxed.has(t.id) && (
+                    <Badge variant="default" className="ml-auto text-[9px]">
+                      MAX
+                    </Badge>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
           <div className="flex gap-2">
             <Button variant="secondary" className="flex-1" onClick={copyList}>
               {listCopied ? (
@@ -398,7 +410,7 @@ export default function TsumsPage() {
               ) : (
                 <Copy className="mr-2 size-4" />
               )}
-              コピー
+              リストをコピー
             </Button>
             <Button variant="outline" className="flex-1" onClick={downloadList}>
               <Download className="mr-2 size-4" />
