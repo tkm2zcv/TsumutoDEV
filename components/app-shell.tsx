@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   Coins,
   Dices,
+  Ghost,
   Inbox,
   KeyRound,
   LayoutDashboard,
@@ -44,7 +45,10 @@ const NAV_SECTIONS = [
   },
   {
     label: "アカウント",
-    items: [{ href: "/account", label: "アカウント管理", icon: KeyRound }],
+    items: [
+      { href: "/guest", label: "ゲストアカウント", icon: Ghost },
+      { href: "/account", label: "アカウント管理", icon: KeyRound },
+    ],
   },
 ] as const;
 

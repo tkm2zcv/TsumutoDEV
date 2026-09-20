@@ -4,10 +4,9 @@ import { useState } from "react";
 import {
   Check,
   Copy,
-  Ghost,
   KeyRound,
+  LogIn,
   Trash2,
-  UserPlus,
   UserRound,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -31,7 +30,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { usePlayer, type AccountProfile } from "@/lib/player-store";
+import { usePlayer } from "@/lib/player-store";
 import { formatNum } from "@/lib/format";
 
 export default function AccountPage() {
@@ -39,8 +38,6 @@ export default function AccountPage() {
     account,
     accounts,
     hydrated,
-    createGuestAccount,
-    issueTransferCode,
     addAccountByCode,
     deleteAccount,
     switchAccount,
@@ -49,10 +46,6 @@ export default function AccountPage() {
   const [name, setName] = useState("");
   const [copied, setCopied] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
-
-  const guests = accounts.filter((a) => a.guest);
-  const linked = accounts.filter((a) => !a.guest);
-  const currentIsGuest = account.guest;
 
   const copyCode = async () => {
     try {
@@ -64,16 +57,6 @@ export default function AccountPage() {
     }
   };
 
-  const onCreateGuest = () => {
-    const acc = createGuestAccount();
-    toast.success(`ゲストアカウント「${acc.name}」を作成し切り替えました`);
-  };
-
-  const onIssueCode = () => {
-    const c = issueTransferCode();
-    toast.success(`新しい引き継ぎコードを発行しました: ${c}`);
-  };
-
   const onAddByCode = () => {
     const res = addAccountByCode(code, name);
     if (!res) {
@@ -81,9 +64,9 @@ export default function AccountPage() {
       return;
     }
     if (res.existed) {
-      toast.info(`登録済みの「${res.account.name}」に切り替えました`);
+      toast.info(`登録済みの「${res.account.name}」にログインしました`);
     } else {
-      toast.success(`「${res.account.name}」を追加して切り替えました`);
+      toast.success(`「${res.account.name}」を追加してログインしました`);
     }
     setCode("");
     setName("");
@@ -99,152 +82,71 @@ export default function AccountPage() {
     });
   };
 
-  const accountRow = (a: AccountProfile) => (
-    <li
-      key={a.id}
-      className="flex items-center justify-between gap-2 py-2.5 text-sm"
-    >
-      <div className="min-w-0">
-        <p className="truncate font-medium">
-          {a.name}
-          {a.id === account.id && (
-            <Badge variant="secondary" className="ml-2 text-[10px]">
-              現在
-            </Badge>
-          )}
-        </p>
-        <p className="truncate font-mono text-xs text-muted-foreground">
-          {a.transferCode}
-        </p>
-      </div>
-      <div className="flex shrink-0 items-center gap-2">
-        <Button
-          size="sm"
-          variant="outline"
-          disabled={a.id === account.id || !hydrated}
-          onClick={() => {
-            switchAccount(a.id);
-            toast.success(`「${a.name}」に切り替えました`);
-          }}
-        >
-          切り替え
-        </Button>
-        <Button
-          size="sm"
-          variant="ghost"
-          className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-          disabled={!hydrated}
-          onClick={() => setDeleting(a.id)}
-        >
-          <Trash2 className="size-4" />
-        </Button>
-      </div>
-    </li>
-  );
-
   return (
     <div className="space-y-6">
       <PageHeader
         icon={KeyRound}
         iconCls="border-sky-400/25 bg-sky-400/10 text-sky-300"
         title="アカウント管理"
-        description="アカウントの作成・引き継ぎ・切り替えを管理します"
+        description="引き継ぎコードでのログインと保有アカウントの管理を行います"
       />
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <UserRound className="size-5" />
-            現在のアカウント
-            <Badge variant={currentIsGuest ? "secondary" : "outline"} className="ml-1 text-[10px]">
-              {currentIsGuest ? "ゲスト" : "連携"}
-            </Badge>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex flex-wrap items-center gap-3">
-            <p className="text-xl font-bold">{account.name}</p>
-            <Badge variant="outline">
-              Lv.{hydrated ? formatNum(account.level) : "—"}
-            </Badge>
-            <Badge variant="outline" className="tabular-nums">
-              {hydrated ? formatNum(account.coins) : "—"} コイン
-            </Badge>
-          </div>
-          <div className="flex items-center gap-2 rounded-md border bg-muted/40 p-3">
-            <div className="flex-1">
-              <p className="text-xs text-muted-foreground">引き継ぎコード</p>
-              <p className="font-mono text-lg tracking-wider">
-                {hydrated ? account.transferCode : "—"}
-              </p>
-            </div>
-            <Button variant="ghost" size="icon" onClick={copyCode}>
-              {copied ? (
-                <Check className="size-4 text-emerald-400" />
-              ) : (
-                <Copy className="size-4" />
-              )}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
       <div className="grid gap-4 xl:grid-cols-2">
-        {/* ゲストアカウント管理 */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Ghost className="size-5 text-violet-300" />
-              ゲストアカウント管理
-            </CardTitle>
-            <CardDescription>
-              ゲストの作成・引き継ぎコード発行・切り替え・削除
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex flex-wrap gap-2">
-              <Button onClick={onCreateGuest} disabled={!hydrated} size="sm">
-                <UserPlus className="mr-2 size-4" />
-                ゲストアカウント作成
-              </Button>
-              <Button
-                variant="secondary"
-                onClick={onIssueCode}
-                disabled={!hydrated || !currentIsGuest}
-                size="sm"
-              >
-                <KeyRound className="mr-2 size-4" />
-                引き継ぎコードを発行
-              </Button>
-            </div>
-            {!currentIsGuest && (
-              <p className="text-xs text-muted-foreground">
-                ※引き継ぎコードの発行はゲストアカウント選択中のみ実行できます
-              </p>
-            )}
-            {guests.length === 0 ? (
-              <p className="rounded-md border border-dashed p-4 text-center text-xs text-muted-foreground">
-                ゲストアカウントはまだありません
-              </p>
-            ) : (
-              <ul className="divide-y">{guests.map(accountRow)}</ul>
-            )}
-          </CardContent>
-        </Card>
+        <div className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <UserRound className="size-5" />
+                現在のアカウント
+                <Badge
+                  variant={account.guest ? "secondary" : "outline"}
+                  className="ml-1 text-[10px]"
+                >
+                  {account.guest ? "ゲスト" : "連携"}
+                </Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex flex-wrap items-center gap-3">
+                <p className="text-xl font-bold">{account.name}</p>
+                <Badge variant="outline">
+                  Lv.{hydrated ? formatNum(account.level) : "—"}
+                </Badge>
+                <Badge variant="outline" className="tabular-nums">
+                  {hydrated ? formatNum(account.coins) : "—"} コイン
+                </Badge>
+              </div>
+              <div className="flex items-center gap-2 rounded-md border bg-muted/40 p-3">
+                <div className="flex-1">
+                  <p className="text-xs text-muted-foreground">
+                    引き継ぎコード
+                  </p>
+                  <p className="font-mono text-lg tracking-wider">
+                    {hydrated ? account.transferCode : "—"}
+                  </p>
+                </div>
+                <Button variant="ghost" size="icon" onClick={copyCode}>
+                  {copied ? (
+                    <Check className="size-4 text-emerald-400" />
+                  ) : (
+                    <Copy className="size-4" />
+                  )}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
 
-        {/* 通常アカウント管理 */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <UserRound className="size-5 text-sky-300" />
-              アカウント管理
-            </CardTitle>
-            <CardDescription>
-              お客様のアカウントなどを引き継ぎコードで追加します
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-3 rounded-lg border bg-muted/20 p-3">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <LogIn className="size-5 text-sky-300" />
+                コードでログイン
+              </CardTitle>
+              <CardDescription>
+                引き継ぎコードを入力してアカウントを追加・切り替えます(ゲストアカウントも可)
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
               <div className="space-y-1.5">
                 <Label htmlFor="add-name" className="text-xs">
                   表示名(任意)
@@ -275,18 +177,69 @@ export default function AccountPage() {
                     size="sm"
                     className="shrink-0"
                   >
-                    追加
+                    ログイン
                   </Button>
                 </div>
               </div>
-            </div>
-            {linked.length === 0 ? (
-              <p className="rounded-md border border-dashed p-4 text-center text-xs text-muted-foreground">
-                追加されたアカウントはありません
-              </p>
-            ) : (
-              <ul className="divide-y">{linked.map(accountRow)}</ul>
-            )}
+            </CardContent>
+          </Card>
+        </div>
+
+        <Card className="h-fit">
+          <CardHeader>
+            <CardTitle className="text-base">保有アカウント一覧</CardTitle>
+            <CardDescription>
+              ゲスト・連携アカウントの切り替えと削除ができます
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ul className="divide-y">
+              {accounts.map((a) => (
+                <li
+                  key={a.id}
+                  className="flex items-center justify-between gap-2 py-2.5 text-sm"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate font-medium">
+                      {a.name}
+                      {a.guest && (
+                        <Badge variant="secondary" className="ml-2 text-[10px]">
+                          ゲスト
+                        </Badge>
+                      )}
+                      {a.id === account.id && (
+                        <Badge className="ml-2 text-[10px]">現在</Badge>
+                      )}
+                    </p>
+                    <p className="truncate font-mono text-xs text-muted-foreground">
+                      {a.transferCode}
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={a.id === account.id || !hydrated}
+                      onClick={() => {
+                        switchAccount(a.id);
+                        toast.success(`「${a.name}」に切り替えました`);
+                      }}
+                    >
+                      切り替え
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                      disabled={!hydrated}
+                      onClick={() => setDeleting(a.id)}
+                    >
+                      <Trash2 className="size-4" />
+                    </Button>
+                  </div>
+                </li>
+              ))}
+            </ul>
           </CardContent>
         </Card>
       </div>
