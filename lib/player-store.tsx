@@ -25,6 +25,7 @@ export type ActivityItem = { id: string; label: string; at: number };
 export type AccountProfile = {
   id: string;
   name: string;
+  guest: boolean;
   transferCode: string;
   coins: number;
   rubies: number;
@@ -68,7 +69,11 @@ function medalItems(n: number): InboxItem[] {
 
 function normalizeMonth(a: AccountProfile): AccountProfile {
   const key = currentMonthKey();
-  const withDefaults = { ...a, activity: a.activity ?? [] };
+  const withDefaults = {
+    ...a,
+    activity: a.activity ?? [],
+    guest: a.guest ?? a.name.startsWith("ゲスト"),
+  };
   if (withDefaults.monthKey === key) return withDefaults;
   return {
     ...withDefaults,
@@ -84,6 +89,7 @@ function makeGuest(index: number): AccountProfile {
   return {
     id: `guest-${Date.now()}-${index}`,
     name: `ゲスト${String(index).padStart(3, "0")}`,
+    guest: true,
     transferCode: genCode(),
     coins: rnd(0, 5_000_000),
     rubies: rnd(0, 400),
@@ -108,6 +114,7 @@ const DEFAULT_STORE: Store = {
     {
       id: "main",
       name: "メインアカウント",
+      guest: false,
       transferCode: "DEMO-MAIN-0001",
       coins: 12_345_678,
       rubies: 342,
@@ -353,6 +360,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           name:
             name?.trim() ||
             `引継ぎアカウント${String(store.accounts.length).padStart(2, "0")}`,
+          guest: false,
           transferCode: norm,
         },
         "引き継ぎコードでアカウントを追加"
