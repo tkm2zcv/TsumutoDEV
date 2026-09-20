@@ -10,6 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/page-header";
 import { usePlayer, type InboxItem } from "@/lib/player-store";
 import { formatNum } from "@/lib/format";
 
@@ -95,15 +96,12 @@ export default function InboxPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="flex items-center gap-2 text-2xl font-bold">
-          <Inbox className="size-6" />
-          ハート・メダル受け取り
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          ゲーム内の受け取り可能なアイテムを自動で受け取ります
-        </p>
-      </div>
+      <PageHeader
+        icon={Inbox}
+        iconCls="border-pink-400/25 bg-pink-400/10 text-pink-300"
+        title="ハート・メダル受け取り"
+        description="ゲーム内の受け取り可能なアイテムを自動で受け取ります"
+      />
 
       <div className="grid gap-4 sm:grid-cols-2">
         <Card>

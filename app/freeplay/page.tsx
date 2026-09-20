@@ -13,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { PageHeader } from "@/components/page-header";
 import { useNow } from "@/hooks/use-now";
 import {
   FREEPLAY_COST_MEDALS,
@@ -58,12 +59,12 @@ export default function FreeplayPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">フリープレイ購入</h1>
-        <p className="text-sm text-muted-foreground">
-          メダルを使用してフリープレイを購入します(月{FREEPLAY_LIMIT}回まで)
-        </p>
-      </div>
+      <PageHeader
+        icon={Timer}
+        iconCls="border-emerald-400/25 bg-emerald-400/10 text-emerald-300"
+        title="フリープレイ購入"
+        description={`メダルを使用してフリープレイを購入します(月${FREEPLAY_LIMIT}回まで)`}
+      />
 
       <div className="grid gap-4 sm:grid-cols-2">
         <Card>

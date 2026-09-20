@@ -10,6 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/page-header";
 import { TaskProgress } from "@/components/task-progress";
 import { useTask } from "@/hooks/use-task";
 import { MAX_LEVEL, usePlayer } from "@/lib/player-store";
@@ -35,12 +36,12 @@ export default function SetPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">セット代行</h1>
-        <p className="text-sm text-muted-foreground">
-          コイン2億枚増加 + プレイヤーレベルMAXを一括実行します
-        </p>
-      </div>
+      <PageHeader
+        icon={Package}
+        iconCls="border-violet-400/25 bg-violet-400/10 text-violet-300"
+        title="セット代行"
+        description="コイン2億枚増加 + プレイヤーレベルMAXを一括実行します"
+      />
 
       <Card className="border-primary/40">
         <CardHeader>

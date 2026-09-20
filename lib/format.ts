@@ -3,6 +3,7 @@ export function formatNum(n: number): string {
 }
 
 export function formatJa(n: number): string {
+  n = Math.floor(n);
   const oku = Math.floor(n / 100_000_000);
   const man = Math.floor((n % 100_000_000) / 10_000);
   const rest = n % 10_000;

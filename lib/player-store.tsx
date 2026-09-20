@@ -20,6 +20,8 @@ const STORAGE_KEY = "tsumutodev.store.v1";
 
 export type InboxItem = { id: string; label: string; amount: number };
 
+export type ActivityItem = { id: string; label: string; at: number };
+
 export type AccountProfile = {
   id: string;
   name: string;
@@ -37,6 +39,7 @@ export type AccountProfile = {
   freeplayUntil: number | null;
   inboxHearts: InboxItem[];
   inboxMedals: InboxItem[];
+  activity: ActivityItem[];
 };
 
 type Store = { accounts: AccountProfile[]; currentId: string };
@@ -65,8 +68,14 @@ function medalItems(n: number): InboxItem[] {
 
 function normalizeMonth(a: AccountProfile): AccountProfile {
   const key = currentMonthKey();
-  if (a.monthKey === key) return a;
-  return { ...a, monthKey: key, monthlyCoinsAdded: 0, freeplayUsed: 0 };
+  const withDefaults = { ...a, activity: a.activity ?? [] };
+  if (withDefaults.monthKey === key) return withDefaults;
+  return {
+    ...withDefaults,
+    monthKey: key,
+    monthlyCoinsAdded: 0,
+    freeplayUsed: 0,
+  };
 }
 
 function makeGuest(index: number): AccountProfile {
@@ -89,6 +98,7 @@ function makeGuest(index: number): AccountProfile {
     freeplayUntil: null,
     inboxHearts: heartItems(rnd(3, 15)),
     inboxMedals: medalItems(rnd(2, 8)),
+    activity: [],
   };
 }
 
@@ -112,6 +122,23 @@ const DEFAULT_STORE: Store = {
       freeplayUntil: null,
       inboxHearts: heartItems(14),
       inboxMedals: medalItems(6),
+      activity: [
+        {
+          id: "seed-1",
+          label: "ハートを14件受け取りました",
+          at: Date.now() - 42 * 60_000,
+        },
+        {
+          id: "seed-2",
+          label: "ハイスコアを 62,481,900 に更新",
+          at: Date.now() - 3 * 60_000,
+        },
+        {
+          id: "seed-3",
+          label: "コイン +1億5,000万枚",
+          at: Date.now() - 60_000,
+        },
+      ],
     },
   ],
 };
@@ -120,6 +147,7 @@ export type PlayerContextValue = {
   account: AccountProfile;
   accounts: AccountProfile[];
   hydrated: boolean;
+  addActivity: (label: string) => void;
   addCoins: (n: number) => void;
   setLevel: (n: number) => void;
   setHighScore: (n: number) => void;
@@ -175,32 +203,67 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     []
   );
 
+  const pushActivity = (
+    a: AccountProfile,
+    label: string
+  ): AccountProfile => ({
+    ...a,
+    activity: [
+      { id: `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`, label, at: Date.now() },
+      ...a.activity,
+    ].slice(0, 30),
+  });
+
+  const addActivity = useCallback(
+    (label: string) => updateAccount((a) => pushActivity(a, label)),
+    [updateAccount]
+  );
+
   const addCoins = useCallback(
     (n: number) =>
-      updateAccount((a) => ({
-        ...a,
-        coins: a.coins + n,
-        monthlyCoinsAdded: a.monthlyCoinsAdded + n,
-      })),
+      updateAccount((a) =>
+        pushActivity(
+          {
+            ...a,
+            coins: a.coins + n,
+            monthlyCoinsAdded: a.monthlyCoinsAdded + n,
+          },
+          `コイン +${Math.floor(n / 100_000_000) > 0 ? `${Math.floor(n / 100_000_000)}億${Math.floor((n % 100_000_000) / 10_000) > 0 ? `${Math.floor((n % 100_000_000) / 10_000)}万` : ""}枚` : `${n.toLocaleString("ja-JP")}枚`}`
+        )
+      ),
     [updateAccount]
   );
 
   const setLevel = useCallback(
-    (n: number) => updateAccount((a) => ({ ...a, level: n })),
+    (n: number) =>
+      updateAccount((a) =>
+        pushActivity(
+          { ...a, level: n },
+          `プレイヤーレベルを Lv.${n.toLocaleString("ja-JP")} に変更`
+        )
+      ),
     [updateAccount]
   );
 
   const setHighScore = useCallback(
-    (n: number) => updateAccount((a) => ({ ...a, highScore: n })),
+    (n: number) =>
+      updateAccount((a) =>
+        pushActivity(
+          { ...a, highScore: n },
+          `ハイスコアを ${n.toLocaleString("ja-JP")} に更新`
+        )
+      ),
     [updateAccount]
   );
 
   const maxTsums = useCallback(
     (ids: string[]) =>
-      updateAccount((a) => ({
-        ...a,
-        maxedTsums: [...new Set([...a.maxedTsums, ...ids])],
-      })),
+      updateAccount((a) =>
+        pushActivity(
+          { ...a, maxedTsums: [...new Set([...a.maxedTsums, ...ids])] },
+          `ツム${ids.length}体をレベルMAXに変更`
+        )
+      ),
     [updateAccount]
   );
 
@@ -211,12 +274,17 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
   const buyFreeplay = useCallback(
     () =>
-      updateAccount((a) => ({
-        ...a,
-        medals: a.medals - FREEPLAY_COST_MEDALS,
-        freeplayUsed: a.freeplayUsed + 1,
-        freeplayUntil: Date.now() + FREEPLAY_DURATION_MS,
-      })),
+      updateAccount((a) =>
+        pushActivity(
+          {
+            ...a,
+            medals: a.medals - FREEPLAY_COST_MEDALS,
+            freeplayUsed: a.freeplayUsed + 1,
+            freeplayUntil: Date.now() + FREEPLAY_DURATION_MS,
+          },
+          "フリープレイを購入(30分タイマー開始)"
+        )
+      ),
     [updateAccount]
   );
 
@@ -232,15 +300,23 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         const targets = id ? items.filter((i) => i.id === id) : items;
         const sum = targets.reduce((t, i) => t + i.amount, 0);
         const rest = items.filter((i) => !targets.includes(i));
-        return type === "hearts"
-          ? { ...a, hearts: a.hearts + sum, inboxHearts: rest }
-          : { ...a, medals: a.medals + sum, inboxMedals: rest };
+        const next =
+          type === "hearts"
+            ? { ...a, hearts: a.hearts + sum, inboxHearts: rest }
+            : { ...a, medals: a.medals + sum, inboxMedals: rest };
+        return pushActivity(
+          next,
+          `${type === "hearts" ? "ハート" : "メダル"}を${targets.length}件受け取り(+${sum.toLocaleString("ja-JP")})`
+        );
       }),
     [updateAccount]
   );
 
   const createGuestAccount = useCallback(() => {
-    const acc = makeGuest(store.accounts.length + 1);
+    const acc = pushActivity(
+      makeGuest(store.accounts.length + 1),
+      "ゲストアカウントを作成"
+    );
     setStore((s) => ({
       accounts: [...s.accounts, acc],
       currentId: acc.id,
@@ -250,7 +326,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
   const issueTransferCode = useCallback(() => {
     const code = genCode();
-    updateAccount((a) => ({ ...a, transferCode: code }));
+    updateAccount((a) =>
+      pushActivity({ ...a, transferCode: code }, "引き継ぎコードを発行")
+    );
     return code;
   }, [updateAccount]);
 
@@ -260,7 +338,15 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         (a) => a.transferCode.toUpperCase() === code.trim().toUpperCase()
       );
       if (!hit) return false;
-      setStore((s) => ({ ...s, currentId: hit.id }));
+      setStore((s) => ({
+        ...s,
+        currentId: hit.id,
+        accounts: s.accounts.map((a) =>
+          a.id === hit.id
+            ? pushActivity(a, "引き継ぎコードでログイン")
+            : a
+        ),
+      }));
       return true;
     },
     [store.accounts]
@@ -278,6 +364,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       account,
       accounts: store.accounts,
       hydrated,
+      addActivity,
       addCoins,
       setLevel,
       setHighScore,
@@ -295,6 +382,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       account,
       store.accounts,
       hydrated,
+      addActivity,
       addCoins,
       setLevel,
       setHighScore,

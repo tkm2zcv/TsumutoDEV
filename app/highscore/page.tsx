@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { PageHeader } from "@/components/page-header";
 import { TaskProgress } from "@/components/task-progress";
 import { useTask } from "@/hooks/use-task";
 import { usePlayer } from "@/lib/player-store";
@@ -62,12 +63,12 @@ export default function HighScorePage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">ハイスコア更新</h1>
-        <p className="text-sm text-muted-foreground">
-          ハイスコアを指定範囲または指定スコアへ変更します
-        </p>
-      </div>
+      <PageHeader
+        icon={Trophy}
+        iconCls="border-sky-400/25 bg-sky-400/10 text-sky-300"
+        title="ハイスコア更新"
+        description="ハイスコアを指定範囲または指定スコアへ変更します"
+      />
 
       <Card>
         <CardHeader>

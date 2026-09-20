@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { PageHeader } from "@/components/page-header";
 import { TsumAvatar } from "@/components/tsum-avatar";
 import { TaskProgress } from "@/components/task-progress";
 import { useTask } from "@/hooks/use-task";
@@ -186,12 +187,12 @@ export default function TsumsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">ツムレベルMAX</h1>
-        <p className="text-sm text-muted-foreground">
-          指定したツムのレベルをMAX(Lv.50)にします
-        </p>
-      </div>
+      <PageHeader
+        icon={Star}
+        iconCls="border-yellow-300/25 bg-yellow-300/10 text-yellow-200"
+        title="ツムレベルMAX"
+        description="指定したツムのレベルをMAX(Lv.50)にします"
+      />
 
       <Card>
         <CardHeader className="space-y-3">

@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { PageHeader } from "@/components/page-header";
 import { TaskProgress } from "@/components/task-progress";
 import { useTask } from "@/hooks/use-task";
 import { usePlayer } from "@/lib/player-store";
@@ -49,12 +50,12 @@ export default function CoinsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">コイン増加</h1>
-        <p className="text-sm text-muted-foreground">
-          コイン数を指定して増加させます
-        </p>
-      </div>
+      <PageHeader
+        icon={Coins}
+        iconCls="border-amber-400/25 bg-amber-400/10 text-amber-300"
+        title="コイン増加"
+        description="コイン数を指定して増加させます"
+      />
 
       <Card>
         <CardHeader>

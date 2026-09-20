@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { PageHeader } from "@/components/page-header";
 import { TsumAvatar } from "@/components/tsum-avatar";
 import { usePlayer } from "@/lib/player-store";
 import { TSUMS } from "@/lib/tsums";
@@ -28,7 +29,7 @@ const GACHAS = [
 type LogEntry = { n: number; tsumId: string; at: string };
 
 export default function GachaPage() {
-  const { account, spendCoins, hydrated } = usePlayer();
+  const { account, spendCoins, hydrated, addActivity } = usePlayer();
   const [gachaId, setGachaId] = useState<string>("premium");
   const [running, setRunning] = useState(false);
   const [count, setCount] = useState(0);
@@ -73,17 +74,22 @@ export default function GachaPage() {
 
   const stop = () => {
     setRunning(false);
+    if (count > 0) {
+      addActivity(
+        `ガチャ自動(${gacha.name}) ${count}回実行・-${formatNum(spent)}コイン`
+      );
+    }
     toast.info("ガチャ自動実行を停止しました");
   };
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">ガチャ自動</h1>
-        <p className="text-sm text-muted-foreground">
-          コインがなくなるまで自動でガチャを回します
-        </p>
-      </div>
+      <PageHeader
+        icon={Dices}
+        iconCls="border-violet-400/25 bg-violet-400/10 text-violet-300"
+        title="ガチャ自動"
+        description="コインがなくなるまで自動でガチャを回します"
+      />
 
       <Card>
         <CardHeader>

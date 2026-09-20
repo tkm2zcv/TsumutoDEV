@@ -10,6 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -65,12 +66,12 @@ export default function AccountPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">アカウント関連</h1>
-        <p className="text-sm text-muted-foreground">
-          アカウントの作成・引き継ぎを管理します
-        </p>
-      </div>
+      <PageHeader
+        icon={KeyRound}
+        iconCls="border-sky-400/25 bg-sky-400/10 text-sky-300"
+        title="アカウント関連"
+        description="アカウントの作成・引き継ぎを管理します"
+      />
 
       <Card>
         <CardHeader>

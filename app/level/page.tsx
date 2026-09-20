@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { PageHeader } from "@/components/page-header";
 import { TaskProgress } from "@/components/task-progress";
 import { useTask } from "@/hooks/use-task";
 import { MAX_LEVEL, usePlayer } from "@/lib/player-store";
@@ -46,12 +47,12 @@ export default function LevelPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">プレイヤーレベル</h1>
-        <p className="text-sm text-muted-foreground">
-          プレイヤーレベルを変更します
-        </p>
-      </div>
+      <PageHeader
+        icon={TrendingUp}
+        iconCls="border-emerald-400/25 bg-emerald-400/10 text-emerald-300"
+        title="プレイヤーレベル"
+        description="プレイヤーレベルを変更します"
+      />
 
       <Card>
         <CardHeader>
