@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Copy, KeyRound, LogIn, UserPlus, UserRound } from "lucide-react";
+import { Check, Copy, KeyRound, Trash2, UserPlus, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import {
   Card,
@@ -15,6 +15,14 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { usePlayer } from "@/lib/player-store";
 import { formatNum } from "@/lib/format";
 
@@ -25,11 +33,13 @@ export default function AccountPage() {
     hydrated,
     createGuestAccount,
     issueTransferCode,
-    loginWithCode,
+    addAccountByCode,
+    deleteAccount,
     switchAccount,
   } = usePlayer();
   const [code, setCode] = useState("");
   const [copied, setCopied] = useState(false);
+  const [deleting, setDeleting] = useState<string | null>(null);
 
   const copyCode = async () => {
     try {
@@ -51,17 +61,28 @@ export default function AccountPage() {
     toast.success(`新しい引き継ぎコードを発行しました: ${c}`);
   };
 
-  const onLogin = () => {
-    if (!code.trim()) {
+  const onAddByCode = () => {
+    const res = addAccountByCode(code);
+    if (!res) {
       toast.error("引き継ぎコードを入力してください");
       return;
     }
-    if (loginWithCode(code)) {
-      toast.success("ログインしました");
-      setCode("");
+    if (res.existed) {
+      toast.info(`登録済みの「${res.account.name}」に切り替えました`);
     } else {
-      toast.error("引き継ぎコードが見つかりません");
+      toast.success(`「${res.account.name}」を追加して切り替えました`);
     }
+    setCode("");
+  };
+
+  const onDelete = (id: string) => {
+    const target = accounts.find((a) => a.id === id);
+    deleteAccount(id);
+    setDeleting(null);
+    toast.success(
+      `「${target?.name ?? "アカウント"}」を削除しました`,
+      { description: id === account.id ? "別のアカウントに切り替えました" : undefined }
+    );
   };
 
   return (
@@ -121,11 +142,11 @@ export default function AccountPage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
-            <LogIn className="size-5" />
-            引き継ぎコードでログイン
+            <UserPlus className="size-5" />
+            アカウント追加(コード)
           </CardTitle>
           <CardDescription>
-            発行済みの引き継ぎコードを入力してアカウントを切り替えます
+            引き継ぎコードを入力してアカウントを追加します。未登録のコードはモック上で新規アカウントとして扱います
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -138,8 +159,8 @@ export default function AccountPage() {
               value={code}
               onChange={(e) => setCode(e.target.value)}
             />
-            <Button onClick={onLogin} disabled={!hydrated}>
-              ログイン
+            <Button onClick={onAddByCode} disabled={!hydrated}>
+              追加
             </Button>
           </div>
         </CardContent>
@@ -172,22 +193,55 @@ export default function AccountPage() {
                     {a.transferCode}
                   </p>
                 </div>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled={a.id === account.id || !hydrated}
-                  onClick={() => {
-                    switchAccount(a.id);
-                    toast.success(`「${a.name}」に切り替えました`);
-                  }}
-                >
-                  切り替え
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={a.id === account.id || !hydrated}
+                    onClick={() => {
+                      switchAccount(a.id);
+                      toast.success(`「${a.name}」に切り替えました`);
+                    }}
+                  >
+                    切り替え
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                    disabled={!hydrated}
+                    onClick={() => setDeleting(a.id)}
+                  >
+                    <Trash2 className="size-4" />
+                  </Button>
+                </div>
               </li>
             ))}
           </ul>
         </CardContent>
       </Card>
+
+      <Dialog open={deleting !== null} onOpenChange={(o) => !o && setDeleting(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>アカウントを削除しますか?</DialogTitle>
+            <DialogDescription>
+              「{accounts.find((a) => a.id === deleting)?.name}」を一覧から削除します。この操作は元に戻せません。
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleting(null)}>
+              キャンセル
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => deleting && onDelete(deleting)}
+            >
+              削除する
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

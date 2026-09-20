@@ -158,7 +158,10 @@ export type PlayerContextValue = {
   collect: (type: "hearts" | "medals", id?: string) => void;
   createGuestAccount: () => AccountProfile;
   issueTransferCode: () => string;
-  loginWithCode: (code: string) => boolean;
+  addAccountByCode: (
+    code: string
+  ) => { account: AccountProfile; existed: boolean } | null;
+  deleteAccount: (id: string) => void;
   switchAccount: (id: string) => void;
 };
 
@@ -332,25 +335,47 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     return code;
   }, [updateAccount]);
 
-  const loginWithCode = useCallback(
+  const addAccountByCode = useCallback(
     (code: string) => {
+      const norm = code.trim().toUpperCase();
+      if (!norm) return null;
       const hit = store.accounts.find(
-        (a) => a.transferCode.toUpperCase() === code.trim().toUpperCase()
+        (a) => a.transferCode.toUpperCase() === norm
       );
-      if (!hit) return false;
+      if (hit) {
+        setStore((s) => ({ ...s, currentId: hit.id }));
+        return { account: hit, existed: true };
+      }
+      const acc = pushActivity(
+        {
+          ...makeGuest(store.accounts.length + 1),
+          name: `引継ぎアカウント${String(store.accounts.length).padStart(2, "0")}`,
+          transferCode: norm,
+        },
+        "引き継ぎコードでアカウントを追加"
+      );
       setStore((s) => ({
-        ...s,
-        currentId: hit.id,
-        accounts: s.accounts.map((a) =>
-          a.id === hit.id
-            ? pushActivity(a, "引き継ぎコードでログイン")
-            : a
-        ),
+        accounts: [...s.accounts, acc],
+        currentId: acc.id,
       }));
-      return true;
+      return { account: acc, existed: false };
     },
     [store.accounts]
   );
+
+  const deleteAccount = useCallback((id: string) => {
+    setStore((s) => {
+      const rest = s.accounts.filter((a) => a.id !== id);
+      if (!rest.length) {
+        const fresh = pushActivity(makeGuest(1), "ゲストアカウントを作成");
+        return { accounts: [fresh], currentId: fresh.id };
+      }
+      return {
+        accounts: rest,
+        currentId: s.currentId === id ? rest[0].id : s.currentId,
+      };
+    });
+  }, []);
 
   const switchAccount = useCallback((id: string) => {
     setStore((s) => ({ ...s, currentId: id }));
@@ -375,7 +400,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       collect,
       createGuestAccount,
       issueTransferCode,
-      loginWithCode,
+      addAccountByCode,
+      deleteAccount,
       switchAccount,
     }),
     [
@@ -393,7 +419,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       collect,
       createGuestAccount,
       issueTransferCode,
-      loginWithCode,
+      addAccountByCode,
+      deleteAccount,
       switchAccount,
     ]
   );
