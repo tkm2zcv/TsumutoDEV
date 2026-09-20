@@ -14,6 +14,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { PageHeader } from "@/components/page-header";
+import { TargetAccountBar } from "@/components/target-account-bar";
+import { useRunConfirm } from "@/components/confirm-run-dialog";
 import { useNow } from "@/hooks/use-now";
 import {
   FREEPLAY_COST_MEDALS,
@@ -25,6 +27,7 @@ import { formatDuration, formatNum } from "@/lib/format";
 
 export default function FreeplayPage() {
   const { account, buyFreeplay, expireFreeplay, hydrated } = usePlayer();
+  const confirm = useRunConfirm();
   const now = useNow(1000);
 
   const active = account.freeplayUntil !== null && account.freeplayUntil > now;
@@ -50,12 +53,23 @@ export default function FreeplayPage() {
     account.freeplayUsed < FREEPLAY_LIMIT &&
     account.medals >= FREEPLAY_COST_MEDALS;
 
-  const run = () => {
-    buyFreeplay();
-    toast.success(
-      `フリープレイを購入しました(メダル -${FREEPLAY_COST_MEDALS}枚)`
-    );
-  };
+  const run = () =>
+    confirm.request({
+      title: "フリープレイ購入の確認",
+      rows: [
+        { label: "消費", value: `メダル ${formatNum(FREEPLAY_COST_MEDALS)}枚` },
+        {
+          label: "実行後",
+          value: `30分タイマー開始・今月 ${account.freeplayUsed + 1}/${FREEPLAY_LIMIT}回`,
+        },
+      ],
+      action: () => {
+        buyFreeplay();
+        toast.success(
+          `フリープレイを購入しました(メダル -${FREEPLAY_COST_MEDALS}枚)`
+        );
+      },
+    });
 
   return (
     <div className="space-y-6">
@@ -65,6 +79,8 @@ export default function FreeplayPage() {
         title="フリープレイ購入"
         description={`メダルを使用してフリープレイを購入します(月${FREEPLAY_LIMIT}回まで)`}
       />
+
+      <TargetAccountBar />
 
       <div className="grid gap-4 sm:grid-cols-2">
         <Card>
@@ -167,6 +183,8 @@ export default function FreeplayPage() {
           </Button>
         </CardContent>
       </Card>
+
+      {confirm.dialog}
     </div>
   );
 }

@@ -6,10 +6,13 @@ import {
   Coins,
   Dices,
   Ghost,
+  History,
   Inbox,
   KeyRound,
   LayoutDashboard,
+  Loader2,
   Menu,
+  Repeat,
   Sparkles,
   Star,
   Timer,
@@ -26,19 +29,23 @@ import { formatNum } from "@/lib/format";
 const NAV_SECTIONS = [
   {
     label: "情報",
-    items: [{ href: "/", label: "ダッシュボード", icon: LayoutDashboard }],
+    items: [
+      { href: "/", label: "ダッシュボード", icon: LayoutDashboard },
+      { href: "/activity", label: "実行履歴", icon: History },
+    ],
   },
   {
     label: "強化",
     items: [
       { href: "/boost", label: "強化", icon: Sparkles },
+      { href: "/repeat", label: "リピートコイン", icon: Repeat },
       { href: "/tsums", label: "ツムレベルMAX", icon: Star },
     ],
   },
   {
     label: "実行",
     items: [
-      { href: "/gacha", label: "ガチャ自動", icon: Dices },
+      { href: "/gacha", label: "ガチャ自動", icon: Dices, runningDot: true },
       { href: "/freeplay", label: "フリープレイ購入", icon: Timer },
       { href: "/inbox", label: "ハート・メダル", icon: Inbox, badge: true },
     ],
@@ -78,7 +85,7 @@ function Brand() {
 
 function NavContent({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
-  const { account } = usePlayer();
+  const { account, gachaRun } = usePlayer();
   const inboxCount = account.inboxHearts.length + account.inboxMedals.length;
   return (
     <div className="flex h-full flex-col">
@@ -115,6 +122,9 @@ function NavContent({ onNavigate }: { onNavigate?: () => void }) {
                       )}
                     />
                     <span className="flex-1">{item.label}</span>
+                    {"runningDot" in item && gachaRun && (
+                      <Loader2 className="size-3.5 animate-spin text-violet-300" />
+                    )}
                     {"badge" in item && item.badge && inboxCount > 0 && (
                       <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-primary/15 px-1.5 text-[10px] font-semibold tabular-nums text-primary">
                         {inboxCount}

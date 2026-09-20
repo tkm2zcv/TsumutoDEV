@@ -11,6 +11,8 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/page-header";
+import { TargetAccountBar } from "@/components/target-account-bar";
+import { useRunConfirm } from "@/components/confirm-run-dialog";
 import { usePlayer, type InboxItem } from "@/lib/player-store";
 import { formatNum } from "@/lib/format";
 
@@ -93,6 +95,7 @@ function InboxSection({
 
 export default function InboxPage() {
   const { account, collect, hydrated } = usePlayer();
+  const confirm = useRunConfirm();
 
   return (
     <div className="space-y-6">
@@ -102,6 +105,8 @@ export default function InboxPage() {
         title="ハート・メダル受け取り"
         description="ゲーム内の受け取り可能なアイテムを自動で受け取ります"
       />
+
+      <TargetAccountBar />
 
       <div className="grid gap-4 sm:grid-cols-2">
         <Card>
@@ -141,10 +146,21 @@ export default function InboxPage() {
           collect("hearts", id);
           toast.success("ハートを受け取りました");
         }}
-        onCollectAll={() => {
-          collect("hearts");
-          toast.success("ハートをすべて受け取りました");
-        }}
+        onCollectAll={() =>
+          confirm.request({
+            title: "ハート一括受け取りの確認",
+            rows: [
+              {
+                label: "内容",
+                value: `ハート ${account.inboxHearts.length}件を一括受け取り`,
+              },
+            ],
+            action: () => {
+              collect("hearts");
+              toast.success("ハートをすべて受け取りました");
+            },
+          })
+        }
       />
 
       <InboxSection
@@ -158,11 +174,24 @@ export default function InboxPage() {
           collect("medals", id);
           toast.success("メダルを受け取りました");
         }}
-        onCollectAll={() => {
-          collect("medals");
-          toast.success("メダルをすべて受け取りました");
-        }}
+        onCollectAll={() =>
+          confirm.request({
+            title: "メダル一括受け取りの確認",
+            rows: [
+              {
+                label: "内容",
+                value: `メダル ${account.inboxMedals.length}件を一括受け取り`,
+              },
+            ],
+            action: () => {
+              collect("medals");
+              toast.success("メダルをすべて受け取りました");
+            },
+          })
+        }
       />
+
+      {confirm.dialog}
     </div>
   );
 }

@@ -6,10 +6,12 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
-import { currentMonthKey } from "./format";
+import { toast } from "sonner";
+import { currentMonthKey, formatNum } from "./format";
 
 export const MAX_LEVEL = 999;
 export const FREEPLAY_COST_MEDALS = 500;
@@ -43,7 +45,11 @@ export type AccountProfile = {
   activity: ActivityItem[];
 };
 
-type Store = { accounts: AccountProfile[]; currentId: string };
+type Store = {
+  accounts: AccountProfile[];
+  currentId: string;
+  confirmBeforeRun: boolean;
+};
 
 function genCode() {
   const seg = () => Math.random().toString(36).slice(2, 6).toUpperCase();
@@ -110,6 +116,7 @@ function makeGuest(index: number): AccountProfile {
 
 const DEFAULT_STORE: Store = {
   currentId: "main",
+  confirmBeforeRun: true,
   accounts: [
     {
       id: "main",
@@ -155,7 +162,22 @@ export type PlayerContextValue = {
   accounts: AccountProfile[];
   hydrated: boolean;
   addActivity: (label: string) => void;
-  addCoins: (n: number) => void;
+  addCoins: (n: number, opts?: { silent?: boolean }) => void;
+  confirmBeforeRun: boolean;
+  setConfirmBeforeRun: (v: boolean) => void;
+  gachaRun: {
+    gachaId: string;
+    name: string;
+    cost: number;
+    count: number;
+    spent: number;
+    accountId: string;
+  } | null;
+  startGacha: (
+    g: { id: string; name: string; cost: number },
+    accountId: string
+  ) => void;
+  stopGacha: () => void;
   setLevel: (n: number) => void;
   setHighScore: (n: number) => void;
   maxTsums: (ids: string[]) => void;
@@ -188,6 +210,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           setStore({
             currentId: parsed.currentId,
             accounts: parsed.accounts.map(normalizeMonth),
+            confirmBeforeRun: parsed.confirmBeforeRun ?? true,
           });
         }
       }
@@ -214,6 +237,18 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     []
   );
 
+  const updateAccountById = useCallback(
+    (id: string, fn: (a: AccountProfile) => AccountProfile) => {
+      setStore((s) => ({
+        ...s,
+        accounts: s.accounts.map((a) =>
+          a.id === id ? fn(normalizeMonth(a)) : a
+        ),
+      }));
+    },
+    []
+  );
+
   const pushActivity = (
     a: AccountProfile,
     label: string
@@ -222,7 +257,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     activity: [
       { id: `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`, label, at: Date.now() },
       ...a.activity,
-    ].slice(0, 30),
+    ].slice(0, 100),
   });
 
   const addActivity = useCallback(
@@ -231,26 +266,96 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   );
 
   const addCoins = useCallback(
-    (n: number) =>
-      updateAccount((a) =>
-        pushActivity(
-          {
-            ...a,
-            coins: a.coins + n,
-            monthlyCoinsAdded: a.monthlyCoinsAdded + n,
-          },
-          `コイン +${Math.floor(n / 100_000_000) > 0 ? `${Math.floor(n / 100_000_000)}億${Math.floor((n % 100_000_000) / 10_000) > 0 ? `${Math.floor((n % 100_000_000) / 10_000)}万` : ""}枚` : `${n.toLocaleString("ja-JP")}枚`}`
-        )
-      ),
+    (n: number, opts?: { silent?: boolean }) =>
+      updateAccount((a) => {
+        const next = {
+          ...a,
+          coins: a.coins + n,
+          monthlyCoinsAdded: a.monthlyCoinsAdded + n,
+        };
+        if (opts?.silent) return next;
+        return pushActivity(
+          next,
+          `コイン +${Math.floor(n / 100_000_000) > 0 ? `${Math.floor(n / 100_000_000)}億${Math.floor((n % 100_000_000) / 10_000) > 0 ? `${Math.floor((n % 100_000_000) / 10_000)}万` : ""}枚` : `${n.toLocaleString("ja-JP")}枚`} → ${formatNum(a.coins + n)}枚`
+        );
+      }),
     [updateAccount]
   );
+
+  const setConfirmBeforeRun = useCallback((v: boolean) => {
+    setStore((s) => ({ ...s, confirmBeforeRun: v }));
+  }, []);
+
+  // ガチャ自動は Provider 側で実行し、ページ移動しても継続する
+  const [gachaRun, setGachaRun] = useState<{
+    gachaId: string;
+    name: string;
+    cost: number;
+    count: number;
+    spent: number;
+    accountId: string;
+  } | null>(null);
+  const gachaRunRef = useRef<typeof gachaRun>(null);
+  const accountsRef = useRef<AccountProfile[]>([]);
+  accountsRef.current = store.accounts;
+
+  const stopGacha = useCallback(() => {
+    const g = gachaRunRef.current;
+    setGachaRun(null);
+    gachaRunRef.current = null;
+    if (g && g.count > 0) {
+      updateAccountById(g.accountId, (a) =>
+        pushActivity(
+          a,
+          `ガチャ自動(${g.name}) ${g.count}回実行・-${formatNum(g.spent)}コイン`
+        )
+      );
+    }
+  }, [updateAccountById]);
+
+  const startGacha = useCallback(
+    (g: { id: string; name: string; cost: number }, accountId: string) => {
+      setGachaRun({
+        gachaId: g.id,
+        name: g.name,
+        cost: g.cost,
+        count: 0,
+        spent: 0,
+        accountId,
+      });
+    },
+    []
+  );
+
+  useEffect(() => {
+    if (!gachaRun) return;
+    const g = gachaRun;
+    const t = setInterval(() => {
+      const target = accountsRef.current.find((a) => a.id === g.accountId);
+      if (!target || target.coins < g.cost) {
+        stopGacha();
+        toast.warning("コインが不足したためガチャ自動を停止しました");
+        return;
+      }
+      updateAccountById(g.accountId, (a) => ({ ...a, coins: a.coins - g.cost }));
+      setGachaRun((cur) =>
+        cur ? { ...cur, count: cur.count + 1, spent: cur.spent + g.cost } : cur
+      );
+    }, 900);
+    return () => clearInterval(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gachaRun === null]);
+
+  useEffect(() => {
+    gachaRunRef.current = gachaRun;
+  }, [gachaRun]);
 
   const setLevel = useCallback(
     (n: number) =>
       updateAccount((a) =>
         pushActivity(
           { ...a, level: n },
-          `プレイヤーレベルを Lv.${n.toLocaleString("ja-JP")} に変更`
+          `プレイヤーレベル Lv.${formatNum(a.level)} → Lv.${n.toLocaleString("ja-JP")}`
         )
       ),
     [updateAccount]
@@ -261,7 +366,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       updateAccount((a) =>
         pushActivity(
           { ...a, highScore: n },
-          `ハイスコアを ${n.toLocaleString("ja-JP")} に更新`
+          `ハイスコア ${formatNum(a.highScore)} → ${formatNum(n)}`
         )
       ),
     [updateAccount]
@@ -272,7 +377,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       updateAccount((a) =>
         pushActivity(
           { ...a, maxedTsums: [...new Set([...a.maxedTsums, ...ids])] },
-          `ツム${ids.length}体をレベルMAXに変更`
+          `ツム${ids.length}体をレベルMAXに変更(計${new Set([...a.maxedTsums, ...ids]).size}体)`
         )
       ),
     [updateAccount]
@@ -329,6 +434,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       "ゲストアカウントを作成"
     );
     setStore((s) => ({
+      ...s,
       accounts: [...s.accounts, acc],
       currentId: acc.id,
     }));
@@ -366,6 +472,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         "引き継ぎコードでアカウントを追加"
       );
       setStore((s) => ({
+        ...s,
         accounts: [...s.accounts, acc],
         currentId: acc.id,
       }));
@@ -379,9 +486,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       const rest = s.accounts.filter((a) => a.id !== id);
       if (!rest.length) {
         const fresh = pushActivity(makeGuest(1), "ゲストアカウントを作成");
-        return { accounts: [fresh], currentId: fresh.id };
+        return { ...s, accounts: [fresh], currentId: fresh.id };
       }
       return {
+        ...s,
         accounts: rest,
         currentId: s.currentId === id ? rest[0].id : s.currentId,
       };
@@ -402,6 +510,11 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       hydrated,
       addActivity,
       addCoins,
+      confirmBeforeRun: store.confirmBeforeRun,
+      setConfirmBeforeRun,
+      gachaRun,
+      startGacha,
+      stopGacha,
       setLevel,
       setHighScore,
       maxTsums,
@@ -418,9 +531,14 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     [
       account,
       store.accounts,
+      store.confirmBeforeRun,
       hydrated,
       addActivity,
       addCoins,
+      setConfirmBeforeRun,
+      gachaRun,
+      startGacha,
+      stopGacha,
       setLevel,
       setHighScore,
       maxTsums,

@@ -20,6 +20,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { PageHeader } from "@/components/page-header";
+import { TargetAccountBar } from "@/components/target-account-bar";
+import { useRunConfirm } from "@/components/confirm-run-dialog";
 import { TaskProgress } from "@/components/task-progress";
 import { useTask } from "@/hooks/use-task";
 import { MAX_LEVEL, usePlayer } from "@/lib/player-store";
@@ -64,17 +66,29 @@ function Radio({ value, id, label }: { value: string; id: string; label: string 
 }
 
 function SetCard() {
-  const { addCoins, setLevel, hydrated } = usePlayer();
+  const { account, addCoins, setLevel, hydrated } = usePlayer();
   const task = useTask();
+  const confirm = useRunConfirm();
   const run = () =>
-    task.start({
-      durationMs: 3200,
-      steps: ["コイン2億枚を付与中", "レベルをMAXに変更中", "反映を確認中"],
-      onDone: () => {
-        addCoins(200_000_000);
-        setLevel(MAX_LEVEL);
-        toast.success("セット代行が完了しました");
-      },
+    confirm.request({
+      title: "セット代行の実行確認",
+      rows: [
+        { label: "内容", value: "コイン+2億枚 / Lv.MAX" },
+        {
+          label: "実行後",
+          value: `${formatNum(account.coins + 200_000_000)}枚 / Lv.${MAX_LEVEL}`,
+        },
+      ],
+      action: () =>
+        task.start({
+          durationMs: 3200,
+          steps: ["コイン2億枚を付与中", "レベルをMAXに変更中", "反映を確認中"],
+          onDone: () => {
+            addCoins(200_000_000);
+            setLevel(MAX_LEVEL);
+            toast.success("セット代行が完了しました");
+          },
+        }),
     });
   return (
     <Card className="flex flex-col border-primary/40">
@@ -104,6 +118,7 @@ function SetCard() {
             {task.running ? "実行中..." : "セット代行を実行する"}
           </Button>
         </div>
+        {confirm.dialog}
       </CardContent>
     </Card>
   );
@@ -112,6 +127,7 @@ function SetCard() {
 function CoinsCard() {
   const { account, addCoins, hydrated } = usePlayer();
   const task = useTask();
+  const confirm = useRunConfirm();
   const [mode, setMode] = useState("100m");
   const [custom, setCustom] = useState("");
   const amount =
@@ -120,10 +136,18 @@ function CoinsCard() {
     : Number(custom.replace(/[^\d]/g, "")) || 0;
   const run = () => {
     if (amount <= 0) { toast.error("枚数を入力してください"); return; }
-    task.start({
-      durationMs: 2200,
-      steps: ["アカウントを確認中", "コインを付与中", "残高を反映中"],
-      onDone: () => { addCoins(amount); toast.success(`${formatJa(amount)}枚を付与しました`); },
+    confirm.request({
+      title: "コイン増加の実行確認",
+      rows: [
+        { label: "増加枚数", value: `${formatJa(amount)}枚` },
+        { label: "実行後", value: `${formatNum(account.coins + amount)} 枚` },
+      ],
+      action: () =>
+        task.start({
+          durationMs: 2200,
+          steps: ["アカウントを確認中", "コインを付与中", "残高を反映中"],
+          onDone: () => { addCoins(amount); toast.success(`${formatJa(amount)}枚を付与しました`); },
+        }),
     });
   };
   return (
@@ -155,6 +179,7 @@ function CoinsCard() {
             {task.running ? "実行中..." : "コインを増加する"}
           </Button>
         </div>
+        {confirm.dialog}
       </CardContent>
     </Card>
   );
@@ -163,6 +188,7 @@ function CoinsCard() {
 function LevelCard() {
   const { account, setLevel, hydrated } = usePlayer();
   const task = useTask();
+  const confirm = useRunConfirm();
   const [mode, setMode] = useState("max");
   const [custom, setCustom] = useState("");
   const target =
@@ -170,10 +196,18 @@ function LevelCard() {
     : Math.min(MAX_LEVEL, Math.max(1, Number(custom.replace(/[^\d]/g, "")) || 0));
   const run = () => {
     if (mode === "custom" && (!custom || target <= 0)) { toast.error("レベルを入力してください"); return; }
-    task.start({
-      durationMs: 2000,
-      steps: ["アカウントを確認中", "レベルを変更中"],
-      onDone: () => { setLevel(target); toast.success(`Lv.${formatNum(target)} に変更しました`); },
+    confirm.request({
+      title: "レベル変更の実行確認",
+      rows: [
+        { label: "現在", value: `Lv.${formatNum(account.level)}` },
+        { label: "実行後", value: `Lv.${formatNum(target)}` },
+      ],
+      action: () =>
+        task.start({
+          durationMs: 2000,
+          steps: ["アカウントを確認中", "レベルを変更中"],
+          onDone: () => { setLevel(target); toast.success(`Lv.${formatNum(target)} に変更しました`); },
+        }),
     });
   };
   return (
@@ -201,6 +235,7 @@ function LevelCard() {
             {task.running ? "実行中..." : "レベルを変更する"}
           </Button>
         </div>
+        {confirm.dialog}
       </CardContent>
     </Card>
   );
@@ -209,22 +244,41 @@ function LevelCard() {
 function ScoreCard() {
   const { account, setHighScore, hydrated } = usePlayer();
   const task = useTask();
+  const confirm = useRunConfirm();
   const [mode, setMode] = useState("r1");
   const [custom, setCustom] = useState("");
+  const rangeLabel = SCORE_RANGES.find((r) => r.id === mode)?.label ?? "スコア指定";
   const run = () => {
-    let score: number | null;
-    if (mode === "custom") {
-      const n = Number(custom.replace(/[^\d]/g, ""));
-      score = n > 0 ? Math.min(n, MAX_SCORE) : null;
-    } else {
-      const r = SCORE_RANGES.find((r) => r.id === mode)!;
-      score = Math.floor(Math.random() * (r.max - r.min + 1)) + r.min;
+    const range = SCORE_RANGES.find((r) => r.id === mode);
+    const fixed =
+      mode === "custom"
+        ? Number(custom.replace(/[^\d]/g, ""))
+        : null;
+    if (mode === "custom" && (!fixed || fixed <= 0)) {
+      toast.error("スコアを入力してください");
+      return;
     }
-    if (score === null) { toast.error("スコアを入力してください"); return; }
-    task.start({
-      durationMs: 2200,
-      steps: ["アカウントを確認中", "ハイスコアを更新中"],
-      onDone: () => { setHighScore(score); toast.success(`ハイスコアを ${formatNum(score)} に更新しました`); },
+    confirm.request({
+      title: "ハイスコア更新の実行確認",
+      rows: [
+        { label: "指定", value: rangeLabel },
+        { label: "現在", value: formatNum(account.highScore) },
+        {
+          label: "実行後",
+          value: fixed ? formatNum(Math.min(fixed, MAX_SCORE)) : "範囲内でランダム",
+        },
+      ],
+      action: () => {
+        const score =
+          fixed !== null
+            ? Math.min(fixed, MAX_SCORE)
+            : Math.floor(Math.random() * (range!.max - range!.min + 1)) + range!.min;
+        task.start({
+          durationMs: 2200,
+          steps: ["アカウントを確認中", "ハイスコアを更新中"],
+          onDone: () => { setHighScore(score); toast.success(`ハイスコアを ${formatNum(score)} に更新しました`); },
+        });
+      },
     });
   };
   return (
@@ -249,6 +303,7 @@ function ScoreCard() {
             {task.running ? "実行中..." : "ハイスコアを更新する"}
           </Button>
         </div>
+        {confirm.dialog}
       </CardContent>
     </Card>
   );
@@ -263,6 +318,7 @@ export default function BoostPage() {
         title="強化"
         description="セット代行・コイン・レベル・ハイスコアを1画面で実行します"
       />
+      <TargetAccountBar />
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <SetCard />
         <CoinsCard />

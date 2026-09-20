@@ -17,6 +17,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { PageHeader } from "@/components/page-header";
+import { TargetAccountBar } from "@/components/target-account-bar";
+import { useRunConfirm } from "@/components/confirm-run-dialog";
 import { TsumAvatar } from "@/components/tsum-avatar";
 import { TaskProgress } from "@/components/task-progress";
 import { useTask } from "@/hooks/use-task";
@@ -67,6 +69,7 @@ function TsumCard({
 export default function TsumsPage() {
   const { account, maxTsums, hydrated } = usePlayer();
   const task = useTask();
+  const confirm = useRunConfirm();
   const [query, setQuery] = useState("");
   const [mode, setMode] = useState("single");
   const [single, setSingle] = useState<string | null>(null);
@@ -142,16 +145,24 @@ export default function TsumsPage() {
       toast.error("対象のツムを選択してください");
       return;
     }
-    task.start({
-      durationMs: 2400,
-      steps: ["対象ツムを確認中", "レベルをMAXに変更中", "反映を確認中"],
-      onDone: () => {
-        maxTsums(selectedIds);
-        toast.success(`${selectedIds.length}体のツムをレベルMAXにしました`);
-        setSingle(null);
-        setMulti(new Set());
-        setImported(new Set());
-      },
+    confirm.request({
+      title: "ツムレベルMAXの実行確認",
+      rows: [
+        { label: "対象ツム", value: `${selectedIds.length}体` },
+        { label: "実行後", value: "Lv.50 (MAX)" },
+      ],
+      action: () =>
+        task.start({
+          durationMs: 2400,
+          steps: ["対象ツムを確認中", "レベルをMAXに変更中", "反映を確認中"],
+          onDone: () => {
+            maxTsums(selectedIds);
+            toast.success(`${selectedIds.length}体のツムをレベルMAXにしました`);
+            setSingle(null);
+            setMulti(new Set());
+            setImported(new Set());
+          },
+        }),
     });
   };
 
@@ -193,6 +204,8 @@ export default function TsumsPage() {
         title="ツムレベルMAX"
         description="指定したツムのレベルをMAX(Lv.50)にします"
       />
+
+      <TargetAccountBar />
 
       <Card>
         <CardHeader className="space-y-3">
@@ -313,6 +326,7 @@ export default function TsumsPage() {
               ? "実行中..."
               : `${selectedIds.length}体をレベルMAXにする`}
           </Button>
+          {confirm.dialog}
         </CardContent>
       </Card>
     </div>

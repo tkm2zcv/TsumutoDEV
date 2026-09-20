@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { CircleStop, Dices, Play } from "lucide-react";
 import { toast } from "sonner";
 import {
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -13,11 +14,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { PageHeader } from "@/components/page-header";
-import { TsumAvatar } from "@/components/tsum-avatar";
+import { TargetAccountBar } from "@/components/target-account-bar";
+import { useRunConfirm } from "@/components/confirm-run-dialog";
 import { usePlayer } from "@/lib/player-store";
-import { TSUMS } from "@/lib/tsums";
 import { formatNum } from "@/lib/format";
 
 const GACHAS = [
@@ -26,59 +26,33 @@ const GACHAS = [
   { id: "select", name: "セレクトガチャ", cost: 45_000 },
 ] as const;
 
-type LogEntry = { n: number; tsumId: string; at: string };
-
 export default function GachaPage() {
-  const { account, spendCoins, hydrated, addActivity } = usePlayer();
+  const { account, accounts, gachaRun, startGacha, stopGacha, hydrated } =
+    usePlayer();
+  const confirm = useRunConfirm();
   const [gachaId, setGachaId] = useState<string>("premium");
-  const [running, setRunning] = useState(false);
-  const [count, setCount] = useState(0);
-  const [spent, setSpent] = useState(0);
-  const [log, setLog] = useState<LogEntry[]>([]);
-  const coinsRef = useRef(account.coins);
-  coinsRef.current = account.coins;
 
   const gacha = GACHAS.find((g) => g.id === gachaId)!;
+  const running = gachaRun !== null;
+  const runningAccount = accounts.find((a) => a.id === gachaRun?.accountId);
+  const runningCoins = runningAccount?.coins ?? account.coins;
 
-  useEffect(() => {
-    if (!running) return;
-    const t = setInterval(() => {
-      if (coinsRef.current < gacha.cost) {
-        setRunning(false);
-        toast.warning("コインが不足したため停止しました");
-        return;
-      }
-      const tsum = TSUMS[Math.floor(Math.random() * TSUMS.length)];
-      spendCoins(gacha.cost);
-      setCount((c) => c + 1);
-      setSpent((s) => s + gacha.cost);
-      setLog((l) => [
-        {
-          n: l.length + 1,
-          tsumId: tsum.id,
-          at: new Date().toLocaleTimeString("ja-JP", { hour12: false }),
-        },
-        ...l,
-      ]);
-    }, 900);
-    return () => clearInterval(t);
-  }, [running, gacha.cost, spendCoins]);
-
-  const start = () => {
-    setLog([]);
-    setCount(0);
-    setSpent(0);
-    setRunning(true);
-    toast.info(`${gacha.name}の自動実行を開始しました`);
-  };
+  const start = () =>
+    confirm.request({
+      title: "ガチャ自動実行の確認",
+      rows: [
+        { label: "対象ガチャ", value: gacha.name },
+        { label: "消費", value: `${formatNum(gacha.cost)}コイン/回` },
+        { label: "停止条件", value: "コイン不足 or 手動停止" },
+      ],
+      action: () => {
+        startGacha(gacha, account.id);
+        toast.info(`${gacha.name}の自動実行を開始しました`);
+      },
+    });
 
   const stop = () => {
-    setRunning(false);
-    if (count > 0) {
-      addActivity(
-        `ガチャ自動(${gacha.name}) ${count}回実行・-${formatNum(spent)}コイン`
-      );
-    }
+    stopGacha();
     toast.info("ガチャ自動実行を停止しました");
   };
 
@@ -91,16 +65,21 @@ export default function GachaPage() {
         description="コインがなくなるまで自動でガチャを回します"
       />
 
+      <TargetAccountBar />
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <Dices className="size-5 text-violet-400" />
             対象ガチャを選択
           </CardTitle>
+          <CardDescription>
+            実行中はページを離れても自動で回り続けます
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-5">
           <RadioGroup
-            value={gachaId}
+            value={running ? gachaRun.gachaId : gachaId}
             onValueChange={setGachaId}
             className="space-y-3"
             disabled={running}
@@ -118,21 +97,29 @@ export default function GachaPage() {
             ))}
           </RadioGroup>
 
+          {running && (
+            <p className="rounded-md border border-violet-400/30 bg-violet-400/10 px-3 py-2 text-xs text-violet-200">
+              実行対象: {runningAccount?.name ?? "—"}(開始時のアカウントに固定)
+            </p>
+          )}
+
           <div className="grid grid-cols-3 gap-3 text-center">
             <div className="rounded-md border bg-muted/40 p-3">
               <p className="text-xs text-muted-foreground">実行回数</p>
-              <p className="text-xl font-bold tabular-nums">{count}回</p>
+              <p className="text-xl font-bold tabular-nums">
+                {gachaRun?.count ?? 0}回
+              </p>
             </div>
             <div className="rounded-md border bg-muted/40 p-3">
               <p className="text-xs text-muted-foreground">消費コイン</p>
               <p className="text-xl font-bold tabular-nums">
-                {formatNum(spent)}
+                {formatNum(gachaRun?.spent ?? 0)}
               </p>
             </div>
             <div className="rounded-md border bg-muted/40 p-3">
               <p className="text-xs text-muted-foreground">残りコイン</p>
               <p className="text-xl font-bold tabular-nums">
-                {hydrated ? formatNum(account.coins) : "—"}
+                {hydrated ? formatNum(runningCoins) : "—"}
               </p>
             </div>
           </div>
@@ -145,7 +132,7 @@ export default function GachaPage() {
               onClick={stop}
             >
               <CircleStop className="mr-2 size-5" />
-              停止する
+              停止する({gachaRun.name}・{gachaRun.count}回実行中)
             </Button>
           ) : (
             <Button
@@ -163,48 +150,13 @@ export default function GachaPage() {
               コインが不足しています
             </p>
           )}
+          {running && (
+            <Badge className="mx-auto flex w-fit animate-pulse">実行中</Badge>
+          )}
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-base">実行ログ</CardTitle>
-          {running && (
-            <Badge className="animate-pulse">実行中</Badge>
-          )}
-        </CardHeader>
-        <CardContent>
-          {log.length === 0 ? (
-            <p className="py-6 text-center text-sm text-muted-foreground">
-              まだ実行されていません
-            </p>
-          ) : (
-            <ScrollArea className="h-64">
-              <ul className="space-y-2">
-                {log.map((e) => {
-                  const tsum = TSUMS.find((t) => t.id === e.tsumId)!;
-                  return (
-                    <li
-                      key={e.n}
-                      className="flex items-center gap-3 rounded-md border bg-muted/30 px-3 py-2 text-sm"
-                    >
-                      <TsumAvatar tsum={tsum} size="sm" />
-                      <div className="flex-1">
-                        <span className="font-medium">{e.n}回目</span>
-                        <span className="mx-2 text-muted-foreground">→</span>
-                        {tsum.name} を獲得
-                      </div>
-                      <span className="text-xs text-muted-foreground tabular-nums">
-                        {e.at}
-                      </span>
-                    </li>
-                  );
-                })}
-              </ul>
-            </ScrollArea>
-          )}
-        </CardContent>
-      </Card>
+      {confirm.dialog}
     </div>
   );
 }

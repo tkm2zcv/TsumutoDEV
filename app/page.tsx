@@ -21,6 +21,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { StatCard } from "@/components/stat-card";
+import { AccountSwitcher } from "@/components/account-switcher";
 import { usePlayer } from "@/lib/player-store";
 import { formatJa, formatNum, monthLabel } from "@/lib/format";
 
@@ -113,15 +114,7 @@ export default function DashboardPage() {
             ダッシュボード
           </h1>
         </div>
-        <Badge
-          variant="outline"
-          className="gap-1.5 rounded-full py-1 pl-1.5 pr-3"
-        >
-          <span className="flex size-5 items-center justify-center rounded-full bg-gradient-to-br from-violet-400 to-indigo-500 text-[10px] font-bold text-white">
-            {account.name.slice(0, 1)}
-          </span>
-          {account.name}
-        </Badge>
+        <AccountSwitcher />
       </div>
 
       {/* ヒーローカード: 今月の増加コイン */}
@@ -235,11 +228,17 @@ export default function DashboardPage() {
 
         {/* 最近のアクティビティ */}
         <Card className="lg:col-span-3">
-          <CardHeader className="pb-3">
+          <CardHeader className="flex flex-row items-center justify-between pb-3">
             <CardTitle className="flex items-center gap-2 text-sm font-medium">
               <Activity className="size-4 text-muted-foreground" />
               最近のアクティビティ
             </CardTitle>
+            <Link
+              href="/activity"
+              className="text-xs text-primary hover:underline"
+            >
+              すべて表示
+            </Link>
           </CardHeader>
           <CardContent>
             {!hydrated || account.activity.length === 0 ? (
