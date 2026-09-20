@@ -22,6 +22,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { StatCard } from "@/components/stat-card";
 import { AccountSwitcher } from "@/components/account-switcher";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { usePlayer } from "@/lib/player-store";
 import { formatJa, formatNum, monthLabel } from "@/lib/format";
 
@@ -52,7 +53,7 @@ function Sparkline({ series }: { series: number[] }) {
   return (
     <svg
       viewBox={`0 0 ${W} ${H}`}
-      className="h-24 w-full"
+      className="h-14 w-full"
       preserveAspectRatio="none"
       aria-hidden
     >
@@ -104,15 +105,13 @@ export default function DashboardPage() {
   const v = (n: number) => (hydrated ? formatNum(n) : "—");
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-3">
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-xs font-medium tracking-widest text-muted-foreground">
+          <p className="text-[10px] font-medium tracking-widest text-muted-foreground">
             OVERVIEW
           </p>
-          <h1 className="mt-1 text-2xl font-bold tracking-tight">
-            ダッシュボード
-          </h1>
+          <h1 className="text-xl font-bold tracking-tight">ダッシュボード</h1>
         </div>
         <AccountSwitcher />
       </div>
@@ -126,7 +125,7 @@ export default function DashboardPage() {
               "radial-gradient(420px 180px at 85% 0%, oklch(0.78 0.155 85 / 12%), transparent 70%)",
           }}
         />
-        <CardHeader className="relative flex-row items-center justify-between pb-1">
+        <CardHeader className="relative flex-row items-center justify-between pb-0">
           <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
             <CalendarClock className="size-4 text-primary" />
             今月の増加コイン
@@ -135,31 +134,28 @@ export default function DashboardPage() {
             {hydrated ? `${monthLabel(account.monthKey)}分` : "—"}
           </Badge>
         </CardHeader>
-        <CardContent className="relative">
-          <div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-4">
+        <CardContent className="relative pb-4">
+          <div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-3">
             <div>
-              <p className="text-4xl font-bold tracking-tight tabular-nums md:text-5xl">
+              <p className="text-3xl font-bold tracking-tight tabular-nums md:text-4xl">
                 <span className="text-gradient-gold">
                   {hydrated ? formatJa(account.monthlyCoinsAdded) : "—"}
                 </span>
-                <span className="ml-1 text-2xl text-muted-foreground">枚</span>
+                <span className="ml-1 text-xl text-muted-foreground">枚</span>
               </p>
-              <p className="mt-2 text-sm text-muted-foreground">
+              <p className="mt-1 text-xs text-muted-foreground">
                 本日 +{hydrated ? formatJa(todayAdded) : "—"}・当月分のみ表示・翌月0リセット
               </p>
             </div>
             <div className="w-full max-w-md flex-1">
               <Sparkline series={hydrated ? series : [0]} />
-              <p className="mt-1 text-right text-[10px] tracking-wide text-muted-foreground">
-                日別の増加推移(累計)
-              </p>
             </div>
           </div>
         </CardContent>
       </Card>
 
       {/* ステータス */}
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 2xl:grid-cols-6">
+      <div className="grid grid-cols-2 gap-2.5 md:grid-cols-3 2xl:grid-cols-6">
         <StatCard
           icon={Coins}
           iconCls="border-amber-400/20 bg-amber-400/10 text-amber-300"
@@ -200,27 +196,29 @@ export default function DashboardPage() {
         />
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-5">
+      <div className="grid gap-3 lg:grid-cols-5">
         {/* クイックアクション */}
         <Card className="lg:col-span-2">
-          <CardHeader className="pb-3">
+          <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">クイックアクション</CardTitle>
           </CardHeader>
-          <CardContent className="grid gap-2">
+          <CardContent className="grid grid-cols-2 gap-2 lg:grid-cols-1">
             {QUICK_ACTIONS.map((a) => (
               <Link
                 key={a.href}
                 href={a.href}
-                className="card-hover group flex items-center gap-3 rounded-lg border bg-muted/20 px-3.5 py-3"
+                className="card-hover group flex items-center gap-2.5 rounded-lg border bg-muted/20 px-3 py-2"
               >
-                <div className="flex size-8 items-center justify-center rounded-md bg-accent text-muted-foreground transition-colors group-hover:bg-primary/15 group-hover:text-primary">
-                  <a.icon className="size-4" />
+                <div className="flex size-7 shrink-0 items-center justify-center rounded-md bg-accent text-muted-foreground transition-colors group-hover:bg-primary/15 group-hover:text-primary">
+                  <a.icon className="size-3.5" />
                 </div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium">{a.label}</p>
-                  <p className="text-xs text-muted-foreground">{a.desc}</p>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium">{a.label}</p>
+                  <p className="truncate text-[11px] text-muted-foreground">
+                    {a.desc}
+                  </p>
                 </div>
-                <ArrowUpRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-primary" />
+                <ArrowUpRight className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-primary" />
               </Link>
             ))}
           </CardContent>
@@ -228,7 +226,7 @@ export default function DashboardPage() {
 
         {/* 最近のアクティビティ */}
         <Card className="lg:col-span-3">
-          <CardHeader className="flex flex-row items-center justify-between pb-3">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="flex items-center gap-2 text-sm font-medium">
               <Activity className="size-4 text-muted-foreground" />
               最近のアクティビティ
@@ -242,26 +240,28 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             {!hydrated || account.activity.length === 0 ? (
-              <p className="py-8 text-center text-sm text-muted-foreground">
+              <p className="py-6 text-center text-sm text-muted-foreground">
                 まだ実行履歴がありません
               </p>
             ) : (
-              <ul className="space-y-1">
-                {account.activity.slice(0, 6).map((item) => (
-                  <li
-                    key={item.id}
-                    className="flex items-center gap-3 rounded-md px-2 py-2 text-sm hover:bg-accent/40"
-                  >
-                    <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-accent">
-                      <Timer className="size-3 text-muted-foreground" />
-                    </span>
-                    <span className="flex-1 truncate">{item.label}</span>
-                    <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
-                      {timeAgo(item.at, now)}
-                    </span>
-                  </li>
-                ))}
-              </ul>
+              <ScrollArea className="max-h-[196px]">
+                <ul className="space-y-1">
+                  {account.activity.slice(0, 10).map((item) => (
+                    <li
+                      key={item.id}
+                      className="flex items-center gap-3 rounded-md px-2 py-1.5 text-sm hover:bg-accent/40"
+                    >
+                      <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-accent">
+                        <Timer className="size-3 text-muted-foreground" />
+                      </span>
+                      <span className="flex-1 truncate">{item.label}</span>
+                      <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
+                        {timeAgo(item.at, now)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </ScrollArea>
             )}
           </CardContent>
         </Card>
