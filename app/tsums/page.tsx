@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
-import { Check, FileUp, Search, Star } from "lucide-react";
+import { Check, Copy, Download, FileUp, Search, Send, Star } from "lucide-react";
 import { toast } from "sonner";
 import {
   Card,
@@ -22,6 +22,13 @@ import { useRunConfirm } from "@/components/confirm-run-dialog";
 import { TsumAvatar } from "@/components/tsum-avatar";
 import { TaskProgress } from "@/components/task-progress";
 import { useTask } from "@/hooks/use-task";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { usePlayer } from "@/lib/player-store";
 import { TSUMS, tsumLevel, type Tsum } from "@/lib/tsums";
 import { cn } from "cn";
@@ -67,9 +74,11 @@ function TsumCard({
 }
 
 export default function TsumsPage() {
-  const { account, maxTsums, hydrated } = usePlayer();
+  const { account, maxTsums, addActivity, hydrated } = usePlayer();
   const task = useTask();
   const confirm = useRunConfirm();
+  const [listDialogOpen, setListDialogOpen] = useState(false);
+  const [listCopied, setListCopied] = useState(false);
   const [query, setQuery] = useState("");
   const [mode, setMode] = useState("single");
   const [single, setSingle] = useState<string | null>(null);
@@ -127,6 +136,37 @@ export default function TsumsPage() {
     setUnmatched(missed);
     setParsed(true);
     toast.info(`${found.size}件のツムを認識しました`);
+  };
+
+  const listText = useMemo(
+    () => TSUMS.map((t) => t.name).join("\n"),
+    []
+  );
+
+  const sendList = () => {
+    setListDialogOpen(true);
+    addActivity(`ツム選択リストを送信(${TSUMS.length}件)`);
+  };
+
+  const copyList = async () => {
+    try {
+      await navigator.clipboard.writeText(listText);
+      setListCopied(true);
+      setTimeout(() => setListCopied(false), 1500);
+    } catch {
+      toast.error("コピーに失敗しました");
+    }
+  };
+
+  const downloadList = () => {
+    const blob = new Blob([listText], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "tsum-list.txt";
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success("ツムリストをダウンロードしました");
   };
 
   const onFile = (f: File | undefined) => {
@@ -274,6 +314,10 @@ export default function TsumsPage() {
                   <FileUp className="mr-2 size-4" />
                   ファイルから読み込む
                 </Button>
+                <Button variant="outline" onClick={sendList}>
+                  <Send className="mr-2 size-4" />
+                  リストを送る
+                </Button>
                 <input
                   ref={fileRef}
                   type="file"
@@ -329,6 +373,40 @@ export default function TsumsPage() {
           {confirm.dialog}
         </CardContent>
       </Card>
+
+      <Dialog open={listDialogOpen} onOpenChange={setListDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Send className="size-5 text-primary" />
+              ツム選択リストをお客様へ送信
+            </DialogTitle>
+            <DialogDescription>
+              所持ツム一覧({TSUMS.length}件)をお客様に送り、レベルを上げたいツムを選んでもらいます。返ってきたリストを「リストインポート」で読み込んでください
+            </DialogDescription>
+          </DialogHeader>
+          <Textarea
+            readOnly
+            rows={10}
+            className="font-mono text-xs"
+            value={listText}
+          />
+          <div className="flex gap-2">
+            <Button variant="secondary" className="flex-1" onClick={copyList}>
+              {listCopied ? (
+                <Check className="mr-2 size-4 text-emerald-400" />
+              ) : (
+                <Copy className="mr-2 size-4" />
+              )}
+              コピー
+            </Button>
+            <Button variant="outline" className="flex-1" onClick={downloadList}>
+              <Download className="mr-2 size-4" />
+              .txtでダウンロード
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
