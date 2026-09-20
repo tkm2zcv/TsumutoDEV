@@ -195,13 +195,13 @@ export default function DashboardPage() {
         />
       </div>
 
-      <div className="grid gap-3 lg:grid-cols-5">
+      <div className="grid items-stretch gap-3 lg:grid-cols-5">
         {/* クイックアクション */}
-        <Card className="lg:col-span-2">
+        <Card className="flex flex-col lg:col-span-2">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">クイックアクション</CardTitle>
           </CardHeader>
-          <CardContent className="grid grid-cols-2 gap-2 lg:grid-cols-1">
+          <CardContent className="grid flex-1 grid-cols-2 content-start gap-2 lg:grid-cols-1">
             {QUICK_ACTIONS.map((a) => (
               <Link
                 key={a.href}
@@ -224,7 +224,7 @@ export default function DashboardPage() {
         </Card>
 
         {/* 最近のアクティビティ */}
-        <Card className="lg:col-span-3">
+        <Card className="flex flex-col lg:col-span-3">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="flex items-center gap-2 text-sm font-medium">
               <Activity className="size-4 text-muted-foreground" />
@@ -237,13 +237,13 @@ export default function DashboardPage() {
               すべて表示
             </Link>
           </CardHeader>
-          <CardContent>
+          <CardContent className="flex min-h-0 flex-1 flex-col">
             {!hydrated || account.activity.length === 0 ? (
               <p className="py-6 text-center text-sm text-muted-foreground">
                 まだ実行履歴がありません
               </p>
             ) : (
-              <div className="max-h-[196px] overflow-y-auto pr-1">
+              <div className="min-h-0 flex-1 overflow-y-auto pr-1">
                 <ul className="space-y-1">
                   {account.activity.slice(0, 10).map((item) => (
                     <li
