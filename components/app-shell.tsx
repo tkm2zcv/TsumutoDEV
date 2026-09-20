@@ -9,11 +9,9 @@ import {
   KeyRound,
   LayoutDashboard,
   Menu,
-  Package,
+  Sparkles,
   Star,
   Timer,
-  TrendingUp,
-  Trophy,
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "cn";
@@ -32,11 +30,8 @@ const NAV_SECTIONS = [
   {
     label: "強化",
     items: [
-      { href: "/set", label: "セット代行", icon: Package },
-      { href: "/coins", label: "コイン増加", icon: Coins },
-      { href: "/level", label: "プレイヤーレベル", icon: TrendingUp },
+      { href: "/boost", label: "強化", icon: Sparkles },
       { href: "/tsums", label: "ツムレベルMAX", icon: Star },
-      { href: "/highscore", label: "ハイスコア更新", icon: Trophy },
     ],
   },
   {

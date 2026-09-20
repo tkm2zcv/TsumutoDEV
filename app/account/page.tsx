@@ -38,6 +38,7 @@ export default function AccountPage() {
     switchAccount,
   } = usePlayer();
   const [code, setCode] = useState("");
+  const [name, setName] = useState("");
   const [copied, setCopied] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
 
@@ -62,7 +63,7 @@ export default function AccountPage() {
   };
 
   const onAddByCode = () => {
-    const res = addAccountByCode(code);
+    const res = addAccountByCode(code, name);
     if (!res) {
       toast.error("引き継ぎコードを入力してください");
       return;
@@ -73,6 +74,7 @@ export default function AccountPage() {
       toast.success(`「${res.account.name}」を追加して切り替えました`);
     }
     setCode("");
+    setName("");
   };
 
   const onDelete = (id: string) => {
@@ -146,10 +148,19 @@ export default function AccountPage() {
             アカウント追加(コード)
           </CardTitle>
           <CardDescription>
-            引き継ぎコードを入力してアカウントを追加します。未登録のコードはモック上で新規アカウントとして扱います
+            お客様のアカウントなど、引き継ぎコードで複数のアカウントを追加できます。未登録のコードはモック上で新規アカウントとして扱います
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
+          <div className="space-y-2">
+            <Label htmlFor="add-name">表示名(任意)</Label>
+            <Input
+              id="add-name"
+              placeholder="例: お客様A"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+          </div>
           <Label htmlFor="code">引き継ぎコード</Label>
           <div className="flex gap-2">
             <Input

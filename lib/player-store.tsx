@@ -159,7 +159,8 @@ export type PlayerContextValue = {
   createGuestAccount: () => AccountProfile;
   issueTransferCode: () => string;
   addAccountByCode: (
-    code: string
+    code: string,
+    name?: string
   ) => { account: AccountProfile; existed: boolean } | null;
   deleteAccount: (id: string) => void;
   switchAccount: (id: string) => void;
@@ -336,7 +337,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, [updateAccount]);
 
   const addAccountByCode = useCallback(
-    (code: string) => {
+    (code: string, name?: string) => {
       const norm = code.trim().toUpperCase();
       if (!norm) return null;
       const hit = store.accounts.find(
@@ -349,7 +350,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       const acc = pushActivity(
         {
           ...makeGuest(store.accounts.length + 1),
-          name: `引継ぎアカウント${String(store.accounts.length).padStart(2, "0")}`,
+          name:
+            name?.trim() ||
+            `引継ぎアカウント${String(store.accounts.length).padStart(2, "0")}`,
           transferCode: norm,
         },
         "引き継ぎコードでアカウントを追加"

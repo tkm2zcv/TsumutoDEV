@@ -10,6 +10,7 @@ import {
   Dices,
   Gem,
   Heart,
+  Inbox,
   Medal,
   Package,
   Star,
@@ -73,10 +74,10 @@ function Sparkline({ series }: { series: number[] }) {
 }
 
 const QUICK_ACTIONS = [
-  { href: "/set", icon: Package, label: "セット代行", desc: "2億枚 + Lv.MAX" },
-  { href: "/coins", icon: Coins, label: "コイン増加", desc: "枚数を指定" },
+  { href: "/boost", icon: Package, label: "強化", desc: "セット/コイン/レベル/スコア" },
   { href: "/gacha", icon: Dices, label: "ガチャ自動", desc: "コイン切れまで" },
   { href: "/tsums", icon: Star, label: "ツムMAX", desc: "選択して実行" },
+  { href: "/inbox", icon: Inbox, label: "受け取り", desc: "ハート・メダル" },
 ];
 
 function timeAgo(at: number, now: number): string {

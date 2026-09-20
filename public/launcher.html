@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ツムツム代行パネル — ランチャー型デザイン案</title>
+<style>
+  :root {
+    --bg: #0b0f1a;
+    --panel: #121828;
+    --panel-2: #161e30;
+    --border: rgba(255,255,255,.08);
+    --text: #eef1f7;
+    --muted: #8b93a7;
+    --gold: #f5c453;
+    --radius: 16px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Noto Sans JP", "Yu Gothic", sans-serif;
+    min-height: 100vh;
+    font-feature-settings: "tnum";
+  }
+  body::before {
+    content:""; position:fixed; inset:0; z-index:-1; pointer-events:none;
+    background:
+      radial-gradient(720px 380px at 12% -6%, rgba(109,88,246,.16), transparent 70%),
+      radial-gradient(680px 360px at 100% 110%, rgba(245,196,83,.10), transparent 70%);
+  }
+
+  /* ── ヘッダー ───────────────────── */
+  header {
+    display:flex; align-items:center; gap:12px;
+    padding:14px 28px; border-bottom:1px solid var(--border);
+    background: rgba(11,15,26,.7); backdrop-filter: blur(10px);
+    position:sticky; top:0; z-index:10;
+  }
+  .logo {
+    width:36px; height:36px; border-radius:11px;
+    background:linear-gradient(135deg,#ffd76e,#f59e3c);
+    display:flex; align-items:center; justify-content:center; font-size:19px;
+    box-shadow:0 4px 14px -2px rgba(245,158,60,.5);
+  }
+  .brand { font-weight:700; font-size:15px; letter-spacing:.02em; }
+  .brand small { display:block; font-size:9px; color:var(--muted); letter-spacing:.2em; font-weight:500; }
+  .mock-badge {
+    margin-left:8px; font-size:9px; padding:2px 8px; border-radius:99px;
+    border:1px solid rgba(245,196,83,.4); color:var(--gold); letter-spacing:.15em;
+  }
+  .account-chip {
+    margin-left:auto; display:flex; align-items:center; gap:9px;
+    background:var(--panel); border:1px solid var(--border);
+    padding:6px 14px 6px 6px; border-radius:99px; cursor:pointer; transition:.15s;
+  }
+  .account-chip:hover { border-color:rgba(255,255,255,.2); }
+  .account-chip .av {
+    width:28px; height:28px; border-radius:50%;
+    background:linear-gradient(135deg,#8b7cf6,#6366f1);
+    display:flex; align-items:center; justify-content:center;
+    font-size:11px; font-weight:700; color:#fff;
+  }
+  .account-chip .meta { font-size:12px; font-weight:600; }
+  .account-chip .meta span { color:var(--muted); font-weight:400; font-size:10px; display:block; }
+
+  /* ── レイアウト ─────────────────── */
+  .wrap { max-width:1240px; margin:0 auto; padding:26px 24px 60px; }
+  .layout { display:grid; grid-template-columns: 1.15fr .85fr; gap:22px; align-items:start; }
+  @media (max-width: 900px){ .layout{ grid-template-columns:1fr; } }
+
+  /* ── ヒーロー ───────────────────── */
+  .hero {
+    display:flex; align-items:flex-end; justify-content:space-between;
+    gap:16px; margin-bottom:22px; flex-wrap:wrap;
+  }
+  .hero h2 { font-size:22px; font-weight:800; letter-spacing:-.01em; }
+  .hero p { color:var(--muted); font-size:12.5px; margin-top:4px; }
+  .hero .stat-line { display:flex; gap:18px; font-size:12px; color:var(--muted); }
+  .hero .stat-line b { color:var(--text); font-size:14px; }
+
+  /* ── タイルグリッド ─────────────── */
+  .tiles { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; }
+  @media (max-width:520px){ .tiles{ grid-template-columns:1fr; } }
+  .tile {
+    text-align:left; background:var(--panel); border:1px solid var(--border);
+    border-radius:var(--radius); padding:16px; cursor:pointer;
+    transition:transform .15s, border-color .15s, background .15s;
+    display:flex; flex-direction:column; gap:12px; color:var(--text);
+    font:inherit; position:relative; overflow:hidden;
+  }
+  .tile:hover { transform:translateY(-2px); border-color:rgba(255,255,255,.18); background:var(--panel-2); }
+  .tile.active { border-color:var(--tc,#f5c453); background:var(--panel-2); }
+  .tile.active::before {
+    content:""; position:absolute; left:0; top:0; bottom:0; width:3px;
+    background:var(--tc,#f5c453);
+  }
+  .tile .ic {
+    width:40px; height:40px; border-radius:11px; font-size:20px;
+    display:flex; align-items:center; justify-content:center;
+    background:var(--tc-bg,rgba(245,196,83,.12));
+  }
+  .tile .t { font-size:14px; font-weight:700; }
+  .tile .d { font-size:11.5px; color:var(--muted); line-height:1.5; }
+  .tile .st { margin-top:auto; font-size:10.5px; color:var(--muted); display:flex; align-items:center; gap:5px; }
+  .tile .dot { width:6px; height:6px; border-radius:50%; background:#34d399; }
+  .tile .dot.warn { background:var(--gold); }
+
+  /* ── 右ペイン ───────────────────── */
+  .panel {
+    background:var(--panel); border:1px solid var(--border);
+    border-radius:var(--radius); overflow:hidden; position:sticky; top:78px;
+  }
+  .panel-head {
+    padding:16px 18px; border-bottom:1px solid var(--border);
+    display:flex; align-items:center; gap:10px;
+  }
+  .panel-head .ic { width:32px; height:32px; border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:16px; }
+  .panel-head h3 { font-size:14px; font-weight:700; }
+  .panel-head .sub { font-size:10.5px; color:var(--muted); }
+  .panel-body { padding:18px; }
+  .feat-detail { display:none; }
+  .feat-detail.on { display:block; animation:fade .2s ease; }
+  @keyframes fade { from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:none;} }
+
+  .opt {
+    display:flex; align-items:center; gap:10px; padding:11px 12px;
+    border:1px solid var(--border); border-radius:11px; margin-bottom:8px;
+    font-size:13px; cursor:pointer; transition:.15s; color:var(--text);
+    background:transparent; width:100%; text-align:left; font:inherit;
+  }
+  .opt:hover { border-color:rgba(255,255,255,.2); }
+  .opt.sel { border-color:var(--gold); background:rgba(245,196,83,.07); }
+  .opt .radio {
+    width:15px; height:15px; border-radius:50%; border:2px solid var(--muted); flex:none;
+  }
+  .opt.sel .radio { border-color:var(--gold); background:radial-gradient(circle,var(--gold) 40%,transparent 45%); }
+  .opt small { color:var(--muted); margin-left:auto; font-size:11px; }
+
+  .field { margin:10px 0; }
+  .field label { display:block; font-size:11px; color:var(--muted); margin-bottom:6px; }
+  .field input {
+    width:100%; background:var(--bg); border:1px solid var(--border);
+    border-radius:10px; padding:10px 12px; color:var(--text); font-size:14px;
+    font:inherit; outline:none; transition:.15s;
+  }
+  .field input:focus { border-color:rgba(245,196,83,.5); }
+  .field input::placeholder { color:var(--muted); }
+
+  .run-btn {
+    width:100%; margin-top:14px; padding:13px; border:none; border-radius:12px;
+    background:linear-gradient(120deg,#f7cf6a,#f09a35); color:#231a05;
+    font-size:14px; font-weight:800; cursor:pointer; letter-spacing:.02em;
+    transition:.15s; font-family:inherit;
+  }
+  .run-btn:hover { filter:brightness(1.06); transform:translateY(-1px); }
+  .run-btn.stop { background:linear-gradient(120deg,#f87171,#ef4444); color:#fff; }
+  .run-btn:disabled { opacity:.4; cursor:not-allowed; transform:none; }
+
+  .prog { height:7px; border-radius:99px; background:rgba(255,255,255,.08); overflow:hidden; margin-top:14px; }
+  .prog > i {
+    display:block; height:100%; width:0%;
+    background:linear-gradient(90deg,#f7cf6a,#f09a35); border-radius:99px;
+    transition:width .1s linear;
+  }
+  .prog-label { font-size:11px; color:var(--muted); margin-top:6px; display:flex; justify-content:space-between; }
+
+  .timer-big { text-align:center; padding:14px 0 6px; }
+  .timer-big .t { font-family:"SF Mono",monospace; font-size:44px; font-weight:700; color:#6ee7b7; }
+  .timer-big .l { font-size:11px; color:var(--muted); }
+
+  /* アクティビティ */
+  .activity { margin-top:22px; background:var(--panel); border:1px solid var(--border); border-radius:var(--radius); }
+  .activity h4 { font-size:13px; font-weight:700; padding:14px 18px 0; }
+  .activity ul { list-style:none; padding:8px 10px 12px; }
+  .activity li { display:flex; gap:10px; align-items:center; font-size:12.5px; padding:7px 8px; border-radius:8px; }
+  .activity li:hover { background:rgba(255,255,255,.03); }
+  .activity li .t { margin-left:auto; color:var(--muted); font-size:10.5px; flex:none; }
+  .activity .bullet { width:7px; height:7px; border-radius:50%; flex:none; }
+
+  .foot { margin-top:22px; font-size:10.5px; color:var(--muted); text-align:center; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">🪙</div>
+  <div class="brand">ツムツム代行<small>TSUMUTODEV</small></div>
+  <span class="mock-badge">DESIGN MOCK</span>
+  <div class="account-chip">
+    <div class="av">メ</div>
+    <div class="meta">メインアカウント<span>引き継ぎコード: DEMO-MAIN-0001</span></div>
+    <span style="color:var(--muted);font-size:11px">▾</span>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="hero">
+    <div>
+      <h2>実行する機能を選択</h2>
+      <p>ダッシュボードではなく「ランチャー型」— タイルから機能を選び、右のパネルで即実行する構成です。</p>
+    </div>
+    <div class="stat-line">
+      <span>コイン <b>12,345,678</b></span>
+      <span>レベル <b>Lv.127</b></span>
+      <span>今月の増加 <b style="color:var(--gold)">+1億5,000万</b></span>
+    </div>
+  </div>
+
+  <div class="layout">
+
+    <!-- 左: 機能タイル -->
+    <div>
+      <div class="tiles" id="tiles">
+        <button class="tile active" data-f="set" style="--tc:#f5c453;--tc-bg:rgba(245,196,83,.13)">
+          <div class="ic">📦</div>
+          <div><div class="t">セット代行</div><div class="d">コイン2億枚 + レベルMAXを一括</div></div>
+          <div class="st"><span class="dot"></span>実行可能</div>
+        </button>
+        <button class="tile" data-f="coins" style="--tc:#fbbf24;--tc-bg:rgba(251,191,36,.13)">
+          <div class="ic">🪙</div>
+          <div><div class="t">コイン増加</div><div class="d">1億 / 2億 / 枚数指定</div></div>
+          <div class="st"><span class="dot"></span>実行可能</div>
+        </button>
+        <button class="tile" data-f="level" style="--tc:#34d399;--tc-bg:rgba(52,211,153,.13)">
+          <div class="ic">📈</div>
+          <div><div class="t">プレイヤーレベル</div><div class="d">MAX / レベル指定</div></div>
+          <div class="st"><span class="dot"></span>実行可能</div>
+        </button>
+        <button class="tile" data-f="tsums" style="--tc:#fde047;--tc-bg:rgba(253,224,71,.13)">
+          <div class="ic">⭐</div>
+          <div><div class="t">ツムレベルMAX</div><div class="d">単体 / 複数 / リストインポート</div></div>
+          <div class="st"><span class="dot"></span>MAX済み 1/72</div>
+        </button>
+        <button class="tile" data-f="highscore" style="--tc:#38bdf8;--tc-bg:rgba(56,189,248,.13)">
+          <div class="ic">🏆</div>
+          <div><div class="t">ハイスコア更新</div><div class="d">範囲ランダム / スコア指定</div></div>
+          <div class="st"><span class="dot"></span>実行可能</div>
+        </button>
+        <button class="tile" data-f="gacha" style="--tc:#a78bfa;--tc-bg:rgba(167,139,250,.13)">
+          <div class="ic">🎰</div>
+          <div><div class="t">ガチャ自動</div><div class="d">コイン切れまで自動・停止可</div></div>
+          <div class="st"><span class="dot"></span>実行可能</div>
+        </button>
+        <button class="tile" data-f="freeplay" style="--tc:#2dd4bf;--tc-bg:rgba(45,212,191,.13)">
+          <div class="ic">⏱️</div>
+          <div><div class="t">フリープレイ購入</div><div class="d">メダル500枚・月3回まで</div></div>
+          <div class="st"><span class="dot warn"></span>タイマー実行中 残り24:32</div>
+        </button>
+        <button class="tile" data-f="inbox" style="--tc:#f472b6;--tc-bg:rgba(244,114,182,.13)">
+          <div class="ic">📥</div>
+          <div><div class="t">ハート・メダル</div><div class="d">受け取り可能アイテム一括回収</div></div>
+          <div class="st"><span class="dot warn"></span>未受取 20件</div>
+        </button>
+      </div>
+
+      <div class="activity">
+        <h4>最近のアクティビティ</h4>
+        <ul>
+          <li><span class="bullet" style="background:#f5c453"></span>コイン +1億5,000万枚<span class="t">1分前</span></li>
+          <li><span class="bullet" style="background:#38bdf8"></span>ハイスコアを 62,481,900 に更新<span class="t">3分前</span></li>
+          <li><span class="bullet" style="background:#f472b6"></span>ハートを14件受け取りました<span class="t">42分前</span></li>
+          <li><span class="bullet" style="background:#a78bfa"></span>ガチャ自動 32回実行・-960,000コイン<span class="t">1時間前</span></li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- 右: 実行パネル -->
+    <div class="panel">
+      <div class="panel-head">
+        <div class="ic" id="p-ic" style="background:rgba(245,196,83,.13)">📦</div>
+        <div><h3 id="p-title">セット代行</h3><div class="sub" id="p-sub">コイン2億枚 + プレイヤーレベルMAX</div></div>
+      </div>
+      <div class="panel-body">
+
+        <div class="feat-detail on" data-f="set">
+          <button class="opt sel"><span class="radio"></span>コイン <b>+2億枚</b><small>12,345,678 → 212,345,678</small></button>
+          <button class="opt sel"><span class="radio"></span>プレイヤーレベル <b>MAX</b><small>Lv.127 → Lv.999</small></button>
+          <button class="run-btn" data-run>セット代行を実行する</button>
+        </div>
+
+        <div class="feat-detail" data-f="coins">
+          <button class="opt sel"><span class="radio"></span>1億枚</button>
+          <button class="opt"><span class="radio"></span>2億枚</button>
+          <button class="opt"><span class="radio"></span>枚数指定</button>
+          <div class="field"><label>増加させる枚数</label><input placeholder="例: 50000000"></div>
+          <button class="run-btn" data-run>コインを増加する</button>
+        </div>
+
+        <div class="feat-detail" data-f="level">
+          <button class="opt sel"><span class="radio"></span>MAX (Lv.999)</button>
+          <button class="opt"><span class="radio"></span>レベル指定</button>
+          <div class="field"><label>変更先レベル</label><input placeholder="例: 500"></div>
+          <button class="run-btn" data-run>レベルを変更する</button>
+        </div>
+
+        <div class="feat-detail" data-f="tsums">
+          <button class="opt sel"><span class="radio"></span>単体選択</button>
+          <button class="opt"><span class="radio"></span>複数選択(手動)</button>
+          <button class="opt"><span class="radio"></span>リストインポート</button>
+          <div class="field"><label>ツム一覧から選択</label><input placeholder="ツム名で検索…"></div>
+          <button class="run-btn" data-run>選択ツムをMAXにする</button>
+        </div>
+
+        <div class="feat-detail" data-f="highscore">
+          <button class="opt sel"><span class="radio"></span>1,000万〜5,000万からランダム</button>
+          <button class="opt"><span class="radio"></span>5,000万〜1億からランダム</button>
+          <button class="opt"><span class="radio"></span>1億〜21億からランダム</button>
+          <button class="opt"><span class="radio"></span>スコア指定</button>
+          <button class="run-btn" data-run>ハイスコアを更新する</button>
+        </div>
+
+        <div class="feat-detail" data-f="gacha">
+          <button class="opt sel"><span class="radio"></span>プレミアムガチャ<small>30,000/回</small></button>
+          <button class="opt"><span class="radio"></span>ピックアップガチャ<small>30,000/回</small></button>
+          <button class="opt"><span class="radio"></span>セレクトガチャ<small>45,000/回</small></button>
+          <button class="run-btn" data-run>自動実行を開始</button>
+        </div>
+
+        <div class="feat-detail" data-f="freeplay">
+          <div class="timer-big"><div class="t">24:32</div><div class="l">残り 24分32秒 — タイマー実行中</div></div>
+          <div class="prog"><i style="width:18%"></i></div>
+          <button class="run-btn" disabled>今月の購入 1/3回 ・ 実行中</button>
+        </div>
+
+        <div class="feat-detail" data-f="inbox">
+          <button class="opt sel"><span class="radio"></span>ハート 14件<small>+14</small></button>
+          <button class="opt sel"><span class="radio"></span>メダル 6件<small>+300</small></button>
+          <button class="run-btn" data-run>すべて受け取る</button>
+        </div>
+
+        <div class="prog" id="prog" style="display:none"><i></i></div>
+        <div class="prog-label" id="prog-label" style="display:none"><span>実行中…</span><span id="prog-pct">0%</span></div>
+      </div>
+    </div>
+
+  </div>
+
+  <p class="foot">TSUMUTODEV — ランチャー型デザイン案(UIモック・静的)</p>
+</div>
+
+<script>
+  const META = {
+    set:       ["📦","セット代行","コイン2億枚 + プレイヤーレベルMAX","rgba(245,196,83,.13)"],
+    coins:     ["🪙","コイン増加","1億 / 2億 / 枚数指定","rgba(251,191,36,.13)"],
+    level:     ["📈","プレイヤーレベル","MAX / レベル指定","rgba(52,211,153,.13)"],
+    tsums:     ["⭐","ツムレベルMAX","単体 / 複数 / リストインポート","rgba(253,224,71,.13)"],
+    highscore: ["🏆","ハイスコア更新","範囲ランダム / スコア指定","rgba(56,189,248,.13)"],
+    gacha:     ["🎰","ガチャ自動","コイン切れまで自動・停止可","rgba(167,139,250,.13)"],
+    freeplay:  ["⏱️","フリープレイ購入","メダル500枚・月3回まで","rgba(45,212,191,.13)"],
+    inbox:     ["📥","ハート・メダル","受け取り可能アイテム一括回収","rgba(244,114,182,.13)"],
+  };
+
+  document.querySelectorAll("#tiles .tile").forEach(t => {
+    t.addEventListener("click", () => {
+      document.querySelectorAll("#tiles .tile").forEach(x => x.classList.remove("active"));
+      t.classList.add("active");
+      const f = t.dataset.f;
+      const m = META[f];
+      document.getElementById("p-ic").textContent = m[0];
+      document.getElementById("p-ic").style.background = m[3];
+      document.getElementById("p-title").textContent = m[1];
+      document.getElementById("p-sub").textContent = m[2];
+      document.querySelectorAll(".feat-detail").forEach(d => d.classList.toggle("on", d.dataset.f === f));
+      hideProg();
+    });
+  });
+
+  document.querySelectorAll(".opt").forEach(o => {
+    o.addEventListener("click", e => {
+      const parent = o.parentElement;
+      parent.querySelectorAll(".opt").forEach(x => x.classList.remove("sel"));
+      o.classList.add("sel");
+      e.preventDefault();
+    });
+  });
+
+  const prog = document.getElementById("prog");
+  const progLabel = document.getElementById("prog-label");
+  const progBar = prog.querySelector("i");
+  const progPct = document.getElementById("prog-pct");
+  let timer = null;
+  function hideProg(){ prog.style.display="none"; progLabel.style.display="none"; }
+  document.querySelectorAll("[data-run]").forEach(b => {
+    b.addEventListener("click", () => {
+      clearInterval(timer);
+      prog.style.display="block"; progLabel.style.display="flex";
+      let p = 0;
+      timer = setInterval(() => {
+        p += 4;
+        progBar.style.width = p + "%";
+        progPct.textContent = p + "%";
+        if (p >= 100) { clearInterval(timer); progLabel.querySelector("span").textContent = "完了しました"; }
+      }, 70);
+    });
+  });
+</script>
+</body>
+</html>
